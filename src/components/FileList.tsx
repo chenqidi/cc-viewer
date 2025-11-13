@@ -33,46 +33,8 @@ export function FileList() {
     initFiles();
   }, [loadFiles]);
 
-  // 加载状态
-  if (isLoading && files.length === 0) {
-    return (
-      <div className="pb-2 pt-0">
-        <LoadingSkeleton rows={3} />
-      </div>
-    );
-  }
-
-  // 错误状态
-  if (error) {
-    return (
-      <div className="pb-2 pt-0">
-        <ErrorAlert
-          type="error"
-          title="加载失败"
-          message={error}
-          onClose={async () => {
-            try {
-              const defaultDir = await invoke<string>('get_default_claude_dir');
-              await loadFiles(defaultDir);
-            } catch (err) {
-              console.error('Retry failed:', err);
-            }
-          }}
-        />
-      </div>
-    );
-  }
-
-  // 空状态
-  if (projects.length === 0) {
-    return (
-      <div className="pb-2 pt-0">
-        <EmptyState type="no-files" />
-      </div>
-    );
-  }
-
   // 将 ProjectInfo 转换为 ProjectGroup 的数据格式
+  // 注意：useMemo 必须在所有条件返回之前调用，遵循 Hooks 规则
   const projectGroups = useMemo(() => {
     const groups = projects.map((project) => {
       // 从 files 中找到属于这个项目的所有 SessionFile
@@ -125,6 +87,45 @@ export function FileList() {
 
     return filteredGroups;
   }, [projects, files, fileSearchQuery]);
+
+  // 加载状态
+  if (isLoading && files.length === 0) {
+    return (
+      <div className="pb-2 pt-0">
+        <LoadingSkeleton rows={3} />
+      </div>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className="pb-2 pt-0">
+        <ErrorAlert
+          type="error"
+          title="加载失败"
+          message={error}
+          onClose={async () => {
+            try {
+              const defaultDir = await invoke<string>('get_default_claude_dir');
+              await loadFiles(defaultDir);
+            } catch (err) {
+              console.error('Retry failed:', err);
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 空状态
+  if (projects.length === 0) {
+    return (
+      <div className="pb-2 pt-0">
+        <EmptyState type="no-files" />
+      </div>
+    );
+  }
 
   // 项目分组列表
   return (
