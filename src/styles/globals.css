@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-text-primary;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code {
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  /* 滚动条样式 */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #232323;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4A4A4A;
+    border: 2px solid #232323;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #5A5A5A;
+  }
+}
+
+@layer components {
+  /* 用于搜索高亮 */
+  mark {
+    @apply bg-accent-yellow text-black px-1 rounded-sm;
+  }
+}

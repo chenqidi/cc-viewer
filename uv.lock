@@ -1,0 +1,34 @@
+version = 1
+requires-python = ">=3.12"
+
+[[package]]
+name = "cc-viewer"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "pretty-errors" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pretty-errors", specifier = ">=1.2.25" }]
+
+[[package]]
+name = "colorama"
+version = "0.4.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335 },
+]
+
+[[package]]
+name = "pretty-errors"
+version = "1.2.25"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c8/a7/823f451d48726729b4983072aad7c442f4c02fbaec04b71c1f4c03993964/pretty_errors-1.2.25.tar.gz", hash = "sha256:a16ba5c752c87c263bf92f8b4b58624e3b1e29271a9391f564f12b86e93c6755", size = 20332 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/8e/2df7467a15eae40e26c476683962fdb810cd1b36676603e2f139b4abbeaf/pretty_errors-1.2.25-py3-none-any.whl", hash = "sha256:8ce68ccd99e0f2a099265c8c1f1c23b7c60a15d69bb08816cb336e237d5dc983", size = 17195 },
+]
