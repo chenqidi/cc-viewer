@@ -1,5 +1,8 @@
 import type { JsonlRecord, TokenUsage, MessageType } from './jsonl';
 
+// 重新导出需要的类型
+export type { TokenUsage };
+
 // ============= 应用层数据结构 =============
 
 export interface SessionFile {

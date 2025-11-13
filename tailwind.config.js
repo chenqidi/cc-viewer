@@ -8,19 +8,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Spacegray Eighties 配色方案
+        // Glass Morphism 配色方案
         background: {
           DEFAULT: '#2B2B2B',
           sidebar: '#232323',
-          card: '#353535',
-          header: '#1F1F1F',      // 深色 header 背景
-          footer: '#1A1A1A',      // 更深的底部背景
+          card: 'rgba(47, 47, 47, 0.6)',
+          header: '#1F1F1F',
+          footer: '#1A1A1A',
         },
-        'card-user': '#3A3A3A',
-        'card-assistant': '#353535',
-        'card-tool': '#2F4F4F',
-        'card-thinking': '#3D3356',
-        'card-system': '#4F2F2F',
+        // 玻璃态卡片背景
+        'glass-card': 'rgba(47, 47, 47, 0.6)',
+        // 角色主题色（用于header背景）
+        'theme-user': 'rgba(102, 153, 204, 0.1)',
+        'theme-assistant': 'rgba(204, 153, 204, 0.1)',
+        'theme-tool': 'rgba(102, 204, 204, 0.1)',
+        'theme-thinking': 'rgba(255, 204, 102, 0.1)',
+        'theme-system': 'rgba(153, 204, 153, 0.1)',
         accent: {
           cyan: '#66CCCC',
           pink: '#F2777A',
@@ -36,15 +39,24 @@ export default {
           muted: '#747369',
           link: '#6699CC',
         },
-        border: '#000000',
+        border: {
+          DEFAULT: 'rgba(255, 255, 255, 0.1)',
+          hover: 'rgba(255, 255, 255, 0.2)',
+        },
       },
       borderRadius: {
         brutal: '2px',
+        glass: '8px',
       },
       boxShadow: {
         brutal: '8px 8px 0 rgba(0, 0, 0, 0.6)',
         'brutal-sm': '4px 4px 0 rgba(0, 0, 0, 0.6)',
         'brutal-lg': '12px 12px 0 rgba(0, 0, 0, 0.7)',
+        glass: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        'glass-hover': '0 12px 40px rgba(0, 0, 0, 0.4)',
+      },
+      backdropBlur: {
+        glass: '12px',
       },
     },
   },

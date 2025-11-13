@@ -45,4 +45,97 @@
   mark {
     @apply bg-accent-yellow text-black px-1 rounded-sm;
   }
+
+  /* Glass Morphism 卡片样式 */
+  .glass-card-base {
+    @apply bg-glass-card backdrop-blur-glass rounded-glass border border-border;
+    @apply shadow-glass transition-all duration-300 ease-in-out;
+    @apply mb-4 p-5;
+  }
+
+  .glass-card-base:hover {
+    @apply border-border-hover shadow-glass-hover;
+    transform: translateY(-2px);
+  }
+
+  /* 不同角色的卡片 - 通过header背景色区分 */
+  .card-user {
+    @apply glass-card-base;
+  }
+
+  .card-assistant {
+    @apply glass-card-base;
+  }
+
+  .card-tool {
+    @apply glass-card-base;
+  }
+
+  .card-thinking {
+    @apply glass-card-base italic;
+  }
+
+  .card-system {
+    @apply glass-card-base;
+  }
+
+  /* Header 主题样式 */
+  .header-user {
+    @apply bg-theme-user rounded-glass px-3 py-2 -mx-1;
+  }
+
+  .header-assistant {
+    @apply bg-theme-assistant rounded-glass px-3 py-2 -mx-1;
+  }
+
+  .header-tool {
+    @apply bg-theme-tool rounded-glass px-3 py-2 -mx-1;
+  }
+
+  .header-thinking {
+    @apply bg-theme-thinking rounded-glass px-3 py-2 -mx-1;
+  }
+
+  .header-system {
+    @apply bg-theme-system rounded-glass px-3 py-2 -mx-1;
+  }
+
+  /* 按钮样式 - 玻璃态风格 */
+  .btn-glass {
+    @apply px-4 py-2 rounded-glass;
+    @apply bg-glass-card backdrop-blur-glass border border-border;
+    @apply text-text-primary;
+    @apply hover:bg-opacity-80 hover:border-border-hover;
+    @apply transition-all duration-200;
+  }
+
+  /* 工具结果区域 */
+  .tool-result {
+    @apply bg-black/40 backdrop-blur-sm border-l-4 border-accent-cyan p-3 my-2 rounded-glass;
+  }
+
+  /* 卡片内容区域 */
+  .card-content {
+	    @apply px-4 py-4 text-text-primary leading-relaxed;
+	  }
+
+  /* 卡片底部 */
+  .card-footer {
+	    @apply flex items-center justify-between gap-2 px-4 py-3 border-t border-border;
+	  }
+
+  /* Token 统计 */
+  .token-stats {
+    @apply text-sm text-text-secondary flex items-center gap-2;
+  }
+
+  /* 时间戳 */
+  .timestamp {
+    @apply text-sm text-text-secondary ml-auto;
+  }
+
+  /* 代码块背景 - 玻璃态 */
+  .code-glass {
+    @apply bg-black/60 backdrop-blur-sm border border-border rounded-glass;
+  }
 }
