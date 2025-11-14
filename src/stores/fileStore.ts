@@ -64,7 +64,13 @@ export const useFileStore = create<FileStore>((set, get) => ({
     const file = get().files.find(f => f.id === fileId);
     if (!file) return;
 
-    set({ isLoading: true, selectedFileId: fileId, error: null });
+    // 切换文件时先清空当前消息，避免旧文件内容在加载过程中短暂残留
+    set({
+      isLoading: true,
+      selectedFileId: fileId,
+      currentMessages: [],
+      error: null,
+    });
 
     try {
       // 读取文件内容

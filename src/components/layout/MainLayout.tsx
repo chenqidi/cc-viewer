@@ -54,7 +54,7 @@ export function MainLayout({ sidebar, content }: MainLayoutProps) {
     >
       {/* 侧边栏 */}
       <div
-        className="flex-shrink-0 border-r-4 border-black bg-[#2a2a2a] relative"
+        className="flex-shrink-0 border-r-4 border-text-primary bg-background-sidebar relative"
         style={{ width: `${sidebarWidth}px` }}
       >
         {sidebar}

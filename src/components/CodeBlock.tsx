@@ -22,6 +22,8 @@ interface CodeBlockProps {
   language?: string;
   showLineNumbers?: boolean;
   className?: string;
+  // 是否显示顶部语言标签和“复制代码”按钮
+  showHeader?: boolean;
 }
 
 export function CodeBlock({
@@ -29,6 +31,7 @@ export function CodeBlock({
   language = 'text',
   showLineNumbers = true,
   className = '',
+  showHeader = true,
 }: CodeBlockProps) {
   const codeRef = useRef<HTMLElement>(null);
 
@@ -49,23 +52,27 @@ export function CodeBlock({
   return (
     <div className={`relative group ${className}`}>
       {/* 语言标签和复制按钮 */}
-      <div className="flex items-center justify-between bg-[#212121] px-4 py-2 border-b-2 border-text-primary">
-        <span className="text-xs text-text-secondary uppercase font-mono">
-          {validLanguage}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          复制代码
-        </Button>
-      </div>
+      {showHeader && (
+        <div className="flex items-center justify-between bg-[#272E36] px-4 py-2 border-b-2 border-border">
+          <span className="text-xs text-text-secondary uppercase font-mono">
+            {validLanguage}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            复制代码
+          </Button>
+        </div>
+      )}
 
       {/* 代码块 */}
       <div className="overflow-x-auto">
-        <pre className={`!m-0 !bg-[#1d1f21] ${showLineNumbers ? 'line-numbers' : ''}`}>
+        <pre
+          className={`!m-0 ${showLineNumbers ? 'line-numbers' : ''} language-${validLanguage}`}
+        >
           <code
             ref={codeRef}
             className={`language-${validLanguage}`}

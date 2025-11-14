@@ -14,12 +14,15 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
     navigator.clipboard.writeText(result);
   };
 
+  if (!toolCalls || toolCalls.length === 0) {
+    return null;
+  }
+
+  // 当前设计：一次只会调用一个工具，取第一个即可
+  const tool = toolCalls[0];
+
   // 获取工具名称列表（折叠时显示）
-  const toolNames = toolCalls.map((tool) => {
-    const icon = TOOL_ICONS[tool.name] || '🛠️';
-    const displayName = TOOL_NAMES[tool.name] || tool.name;
-    return `${icon} ${displayName}`;
-  }).join(', ');
+  const toolNames = `tool: ${tool.name}`;
 
   if (!isExpanded) {
     return (
@@ -29,76 +32,82 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
     );
   }
 
+  // 高亮显示工具结果（如果有的话；当前 assistant.tool_use 卡片一般只关心参数）
+  const displayResult = searchQuery && tool.result
+    ? highlightText(tool.result, searchQuery)
+    : tool.result;
+
   return (
-    <div className="text-text-primary space-y-4">
-      {toolCalls.map((tool, index) => {
-        // 高亮显示工具结果
-        const displayResult = searchQuery && tool.result
-          ? highlightText(tool.result, searchQuery)
-          : tool.result;
+    <>
+      {/* 工具名称（纯文本形式，如 "tool: Read"） */}
+      <div className="text-xs text-text-secondary mb-2">
+        {`tool: ${tool.name}`}
+      </div>
 
-        return (
-          <div
-            key={tool.id || index}
-            className="border-l-4 border-accent-cyan pl-4 py-2 bg-black/20 rounded-r-glass backdrop-blur-sm"
-          >
-            {/* 工具名称 */}
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">{TOOL_ICONS[tool.name] || '🛠️'}</span>
-              <span className="font-semibold text-lg text-text-primary">
-                {TOOL_NAMES[tool.name] || tool.name}
-              </span>
-              <span className={`text-xs px-3 py-1 rounded-glass backdrop-blur-sm ${
-                tool.status === 'success'
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
-              }`}>
-                {tool.status === 'success' ? '✓ 成功' : '✗ 失败'}
-              </span>
-            </div>
+      {/* 工具参数：紧跟在 tool 行后面，多个参数就是多块 */}
+      {Object.keys(tool.input).length > 0 && (
+        <div className="space-y-1">
+          {Object.entries(tool.input).map(([key, value]) => {
+            let displayValue: string;
 
-            {/* 工具参数 */}
-            {Object.keys(tool.input).length > 0 && (
-              <div className="mb-3">
-                <p className="text-xs text-text-secondary mb-2 font-medium">参数:</p>
-                <pre className="code-glass p-4 text-xs overflow-x-auto leading-relaxed">
-                  {JSON.stringify(tool.input, null, 2)}
-                </pre>
+            if (value === null || value === undefined) {
+              displayValue = 'null';
+            } else if (typeof value === 'string') {
+              displayValue = value;
+            } else {
+              try {
+                displayValue = JSON.stringify(value);
+              } catch {
+                displayValue = String(value);
+              }
+            }
+
+            return (
+              <div
+                key={key}
+                className="bg-[#2a2a2a] rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2"
+              >
+                <span className="font-semibold text-text-secondary break-keep">
+                  {key}:
+                </span>
+                <span className="whitespace-pre-wrap break-words">
+                  {displayValue}
+                </span>
               </div>
-            )}
+            );
+          })}
+        </div>
+      )}
 
-            {/* 工具结果 */}
-            {tool.result && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-text-secondary font-medium">结果:</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopyResult(tool.result!);
-                    }}
-                    className="h-7 px-3 text-xs hover:bg-white/5 rounded-glass transition-colors"
-                  >
-                    复制
-                  </Button>
-                </div>
-                {searchQuery ? (
-                  <pre
-                    className="code-glass p-4 text-xs overflow-x-auto max-h-96 overflow-y-auto leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: displayResult || '' }}
-                  />
-                ) : (
-                  <pre className="code-glass p-4 text-xs overflow-x-auto max-h-96 overflow-y-auto leading-relaxed">
-                    {tool.result}
-                  </pre>
-                )}
-              </div>
-            )}
+      {/* 工具结果（如果存在的话，依然保留在参数块之后） */}
+      {tool.result && (
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-text-secondary font-medium">结果:</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyResult(tool.result!);
+              }}
+              className="h-7 px-3 text-xs hover:bg-white/5 rounded-glass transition-colors"
+            >
+              复制
+            </Button>
           </div>
-        );
-      })}
-    </div>
+          {searchQuery ? (
+            <pre
+              className="code-glass p-4 text-xs overflow-x-auto max-h-96 overflow-y-auto leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: displayResult || '' }}
+            />
+          ) : (
+            <pre className="code-glass p-4 text-xs overflow-x-auto max-h-96 overflow-y-auto leading-relaxed">
+              {tool.result}
+            </pre>
+          )}
+        </div>
+      )}
+    </>
   );
 }

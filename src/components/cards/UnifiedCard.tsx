@@ -1,28 +1,56 @@
 import { ReactNode } from 'react';
-import { Card, CardHeader, CardContent, CardFooter } from '../ui/card';
+import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { cn, formatTimestamp, highlightText } from '../../lib/utils';
+import { cn, highlightText, formatTimestamp } from '../../lib/utils';
 import { useUiStore } from '../../stores/uiStore';
 import ReactMarkdown from 'react-markdown';
+import type { LucideIcon } from 'lucide-react';
+import { User, Bot, Cpu, Sparkles, Wrench, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from '../CodeBlock';
 import type { TokenUsage } from '../../types/app';
 
 type CardType = 'user' | 'assistant' | 'system' | 'thinking' | 'tool';
 
-const headerBgClasses: Record<CardType, string> = {
-  user: 'bg-theme-user',
-  assistant: 'bg-theme-assistant',
-  tool: 'bg-theme-tool',
-  thinking: 'bg-theme-thinking',
-  system: 'bg-theme-system',
+const typeConfig: Record<
+  CardType,
+  {
+    Icon: LucideIcon;
+    iconColorClass: string;
+  }
+> = {
+  user: {
+    Icon: User,
+    iconColorClass: 'text-accent-blue',
+  },
+  assistant: {
+    Icon: Bot,
+    iconColorClass: 'text-accent-green',
+  },
+  tool: {
+    Icon: Wrench,
+    iconColorClass: 'text-accent-orange',
+  },
+  thinking: {
+    Icon: Sparkles,
+    iconColorClass: 'text-accent-yellow',
+  },
+  system: {
+    Icon: Cpu,
+    iconColorClass: 'text-accent-purple',
+  },
 };
 
 interface UnifiedCardProps {
   type: CardType;
   messageId: string;
   timestamp: Date;
-  content: string | ReactNode;
+  // 支持字符串、字符串数组（多段 Markdown）以及自定义 ReactNode
+  content: string | string[] | ReactNode;
+  // 头部展示的类型标签：优先使用原始 JSON 的 type / 派生信息
+  label?: string;
+  // 点击复制按钮时复制的内容（若不传则不提供复制按钮）
+  copyText?: string;
   tokenUsage?: TokenUsage;
   searchQuery?: string;
   metadata?: string;
@@ -35,7 +63,8 @@ export function UnifiedCard({
   messageId,
   timestamp,
   content,
-  tokenUsage,
+  label,
+  copyText,
   searchQuery,
   metadata,
   defaultExpanded = true,
@@ -48,41 +77,56 @@ export function UnifiedCard({
   const isExpanded = expandedCards.has(cardId) ? true : (expandedCards.size === 0 ? defaultExpanded : false);
 
   const isStringContent = typeof content === 'string';
+  const isStringArrayContent = Array.isArray(content) && content.every(item => typeof item === 'string');
+  const hasCopyText = typeof copyText === 'string' && copyText.length > 0;
+  const { Icon, iconColorClass } = typeConfig[type];
 
   const handleCopy = () => {
-    if (isStringContent) {
-      navigator.clipboard.writeText(content);
+    if (hasCopyText) {
+      navigator.clipboard.writeText(copyText as string);
     }
   };
 
   const renderContent = () => {
     // ReactNode 直接渲染
-    if (!isStringContent) {
+    if (!isStringContent && !isStringArrayContent) {
       return content;
     }
 
-    // 应用搜索高亮
-    const displayContent = searchQuery ? highlightText(content, searchQuery) : content;
-
     // Markdown 渲染
     if (renderAsMarkdown) {
-      return (
-        <div className="text-text-primary prose prose-invert max-w-none">
+      const renderMarkdownBlock = (markdown: string, key?: number) => (
+        <div key={key}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              code({ className, children, ...props }) {
-                const match = /language-(\w+)/.exec(className || '');
+              code({ inline, className, children }) {
+                // 使用 inline 判断块级/行内：
+                // - 三反引号 / 缩进代码块：inline === false
+                // - 单反引号行内代码：inline === true
+                const match = /language-([\w-]+)/.exec(className || '');
                 const language = match ? match[1] : '';
+                const isCodeBlock = inline === false;
                 const code = String(children).replace(/\n$/, '');
-                const inline = !className;
 
-                return !inline ? (
-                  <CodeBlock code={code} language={language} />
-                ) : (
+                // 块级代码：统一走 CodeBlock（即使没有显式语言）
+                if (isCodeBlock) {
+                  return (
+                    <CodeBlock
+                      code={code}
+                      language={language || undefined}
+                      showHeader={Boolean(language)}
+                    />
+                  );
+                }
+
+                // 行内代码：语义化 <code>，不再透传 node 等内部属性
+                return (
                   <code
-                    className="code-glass px-2 py-1 rounded text-sm font-mono text-accent-cyan"
-                    {...props}
+                    className={cn(
+                      'code-glass px-2 py-1 rounded text-sm font-mono text-text-primary',
+                      className
+                    )}
                   >
                     {children}
                   </code>
@@ -124,13 +168,43 @@ export function UnifiedCard({
               },
             }}
           >
-            {content}
+            {markdown}
           </ReactMarkdown>
+        </div>
+      );
+
+      // 若传入的是字符串数组，则每段单独渲染一个 div（满足“content 里面 N 个 div”的需求）
+      if (isStringArrayContent) {
+        return (
+          <div className="text-text-primary prose-sm prose-invert max-w-none space-y-4">
+            {(content as string[]).map((item, index) => renderMarkdownBlock(item, index))}
+          </div>
+        );
+      }
+
+      // 普通字符串 Markdown 渲染
+      return (
+        <div className="text-text-primary prose-sm prose-invert max-w-none">
+          {renderMarkdownBlock(content as string)}
         </div>
       );
     }
 
     // 纯文本渲染
+    // 字符串数组：非 Markdown 模式下简单拼接展示（主要用于调试场景）
+    if (!isStringContent && isStringArrayContent) {
+      const joined = (content as string[]).join('\n\n');
+      const displayContent = searchQuery ? highlightText(joined, searchQuery) : joined;
+      return (
+        <div
+          className="text-text-primary whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ __html: displayContent }}
+        />
+      );
+    }
+
+    const displayContent = searchQuery ? highlightText(content as string, searchQuery) : (content as string);
+
     if (searchQuery) {
       return (
         <div
@@ -147,35 +221,34 @@ export function UnifiedCard({
     <Card className={`card-${type}`}>
       <CardHeader
         className={cn(
-	          'flex flex-row items-center justify-between px-4 py-3 border-b border-border',
-          headerBgClasses[type]
+          'flex flex-row items-center justify-between px-4 py-2 border-b-2 border-border bg-background-header'
         )}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <span className="font-semibold text-text-primary shrink-0 text-base">
-            {type}
-          </span>
-          {metadata && (
-            <span className="text-xs text-text-muted">•</span>
-          )}
-          {metadata && (
-            <span className="text-xs text-text-secondary truncate">
-              {metadata}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40">
+              <Icon className={cn('w-3.5 h-3.5', iconColorClass)} />
             </span>
-          )}
-          <span className="text-sm text-text-muted ml-auto shrink-0">
-            {formatTimestamp(timestamp)}
-          </span>
+            <span className="font-semibold text-xs uppercase tracking-wide text-text-primary">
+              {label || type}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2 ml-3 shrink-0">
-          {isStringContent && (
+          <span className="text-xs text-text-muted shrink-0">
+            {metadata
+              ? `${formatTimestamp(timestamp)} <${metadata}>`
+              : formatTimestamp(timestamp)}
+          </span>
+          {hasCopyText && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleCopy}
-              className="h-8 px-3 text-xs hover:bg-white/5 transition-colors rounded-glass"
+              className="h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors rounded-glass"
+              aria-label="复制内容"
             >
-              复制
+              <Copy className="w-3.5 h-3.5" />
             </Button>
           )}
           <button
@@ -183,7 +256,11 @@ export function UnifiedCard({
             onClick={() => toggleCard(cardId)}
             aria-label={isExpanded ? '折叠' : '展开'}
           >
-            {isExpanded ? '▼' : '▶'}
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
           </button>
         </div>
       </CardHeader>
@@ -192,22 +269,6 @@ export function UnifiedCard({
         <CardContent className="card-content">
           {renderContent()}
         </CardContent>
-      )}
-
-      {isExpanded && tokenUsage && (
-        <CardFooter className="card-footer">
-          <div className="token-stats">
-            <span className="text-accent-cyan">📊</span>
-            <span>{tokenUsage.input_tokens.toLocaleString()} ↑</span>
-            <span className="text-text-muted">/</span>
-            <span>{tokenUsage.output_tokens.toLocaleString()} ↓</span>
-            {(tokenUsage.cache_read_input_tokens ?? 0) > 0 && (
-              <span className="ml-2 text-xs text-accent-green">
-                缓存: {(tokenUsage.cache_read_input_tokens ?? 0).toLocaleString()}
-              </span>
-            )}
-          </div>
-        </CardFooter>
       )}
     </Card>
   );

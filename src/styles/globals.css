@@ -48,15 +48,11 @@
 
   /* Glass Morphism 卡片样式 */
   .glass-card-base {
-    @apply bg-glass-card backdrop-blur-glass rounded-glass border border-border;
-    @apply shadow-glass transition-all duration-300 ease-in-out;
+    @apply bg-background-sidebar rounded-glass border-2 border-border;
+    @apply shadow-glass;
     @apply mb-4 p-5;
   }
 
-  .glass-card-base:hover {
-    @apply border-border-hover shadow-glass-hover;
-    transform: translateY(-2px);
-  }
 
   /* 不同角色的卡片 - 通过header背景色区分 */
   .card-user {
@@ -116,7 +112,7 @@
 
   /* 卡片内容区域 */
   .card-content {
-	    @apply px-4 py-4 text-text-primary leading-relaxed;
+	    @apply px-4 py-4 text-text-primary text-sm leading-relaxed;
 	  }
 
   /* 卡片底部 */
@@ -136,6 +132,21 @@
 
   /* 代码块背景 - 玻璃态 */
   .code-glass {
-    @apply bg-black/60 backdrop-blur-sm border border-border rounded-glass;
+    @apply bg-[#2a2a2a] backdrop-blur-sm border border-border rounded-glass;
+  }
+
+  /* Prism 代码块配色覆盖 - 使用 SpaceGray Eighties 风格 */
+  /* 只针对 Markdown 内容区域（.prose-*），避免影响工具结果等其它 <pre> */
+  .card-content .prose-sm pre {
+    background-color: #2a2a2a;
+    color: #C9C6BC;
+    @apply border border-border rounded-glass;
+  }
+
+  /* 让块级代码块只由 pre 控制背景，内部 code 完全透明且无边框，避免“每行一块边框” */
+  .card-content .prose-sm pre code {
+    background-color: transparent;
+    border-width: 0;
+    border: none;
   }
 }

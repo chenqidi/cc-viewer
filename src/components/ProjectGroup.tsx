@@ -6,8 +6,16 @@ import { LoadingSpinner } from './ui/loading';
 // 向右箭头图标（折叠状态）
 function ChevronRightIcon() {
   return (
-    <svg width="14px" height="14px" viewBox="0 0 0.6 0.6" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0.216 0.14a0.026 0.026 0 0 0 0 0.036L0.34 0.3 0.216 0.424a0.026 0.026 0 0 0 0.036 0.036L0.394 0.318a0.026 0.026 0 0 0 0 -0.036L0.252 0.14a0.026 0.026 0 0 0 -0.036 0z" fill="currentColor"/>
+    <svg
+      width="14px"
+      height="14px"
+      viewBox="0 0 0.6 0.6"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M0.216 0.14a0.026 0.026 0 0 0 0 0.036L0.34 0.3 0.216 0.424a0.026 0.026 0 0 0 0.036 0.036L0.394 0.318a0.026 0.026 0 0 0 0 -0.036L0.252 0.14a0.026 0.026 0 0 0 -0.036 0z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
@@ -15,8 +23,16 @@ function ChevronRightIcon() {
 // 向下箭头图标（展开状态）
 function ChevronDownIcon() {
   return (
-    <svg width="14px" height="14px" viewBox="0 0 0.6 0.6" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0.318 0.392a0.026 0.026 0 0 1 -0.036 0L0.14 0.25a0.026 0.026 0 0 1 0.036 -0.036L0.3 0.34 0.424 0.216A0.026 0.026 0 0 1 0.46 0.252z" fill="currentColor"/>
+    <svg
+      width="14px"
+      height="14px"
+      viewBox="0 0 0.6 0.6"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M0.318 0.392a0.026 0.026 0 0 1 -0.036 0L0.14 0.25a0.026 0.026 0 0 1 0.036 -0.036L0.3 0.34 0.424 0.216A0.026 0.026 0 0 1 0.46 0.252z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
@@ -55,14 +71,22 @@ export function ProjectGroup({
           ${isExpanded ? 'bg-[#1f1f1f]' : 'hover:bg-[#1f1f1f]'}
         `}
       >
-        {/* 项目名 */}
-        <div className="font-bold text-sm truncate text-text-primary" title={projectCwd}>
-          {projectName} [{fileCount}]
-        </div>
-
-        {/* 日期信息 - 与项目名左对齐 */}
-        <div className="text-xs text-text-secondary mt-0.5">
-          {formatDateTime(lastModified)}
+        {/* 项目名 + 折叠图标 + 日期信息（时间与项目名左对齐） */}
+        <div className="flex items-start gap-2">
+          <span className="text-text-secondary flex-shrink-0 h-5 flex items-center">
+            {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          </span>
+          <div className="flex-1 min-w-0">
+            <div
+              className="font-bold text-sm truncate text-text-primary"
+              title={projectCwd}
+            >
+              {projectName} [{fileCount}]
+            </div>
+            <div className="text-xs text-text-secondary mt-0.5">
+              {formatDateTime(lastModified)}
+            </div>
+          </div>
         </div>
       </button>
 
@@ -97,7 +121,7 @@ function FileItem({ file, isSelected, isLoading, onClick }: FileItemProps) {
       onClick={onClick}
       disabled={isLoading}
       className={`
-        group w-full pl-6 pr-4 py-1.5 text-left transition-colors
+        group w-full pl-9 pr-4 py-1.5 text-left transition-colors
         flex items-start justify-between gap-2
         ${isSelected ? 'bg-[#2a2a2a]' : ''}
         ${isLoading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}

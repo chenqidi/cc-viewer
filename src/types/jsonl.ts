@@ -27,10 +27,12 @@ export interface UserMessage extends BaseMessage {
   type: 'user';
   message: {
     role: 'user';
-    content: string | ToolResultContent[];
+    content: string | (ToolResultContent | TextContent)[];
   };
   thinkingMetadata?: {
-    thinkingLevel: 'high' | 'medium' | 'low';
+    level?: 'high' | 'medium' | 'low';
+    disabled?: boolean;
+    triggers?: string[];
   };
   toolUseResult?: unknown;
 }

@@ -2,9 +2,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const cardBaseClasses =
-	"bg-glass-card backdrop-blur-glass rounded-glass border border-border " +
-	"shadow-glass transition-all duration-300 ease-in-out mb-4 overflow-hidden " +
-	"hover:border-border-hover hover:shadow-glass-hover hover:-translate-y-0.5";
+	"bg-background-sidebar rounded-glass border-2 border-border " +
+	"shadow-glass mb-4 overflow-hidden";
 
 const Card = React.forwardRef<
   HTMLDivElement,

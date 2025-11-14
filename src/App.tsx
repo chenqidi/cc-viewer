@@ -16,7 +16,15 @@ import { useKeyboard } from "./hooks/useKeyboard";
 
 function App() {
   const { selectedFileId, currentMessages, files } = useFileStore();
-  const { searchQuery, setSearchResults, expandedCards, expandAll, collapseAll, isStatsPanelExpanded, toggleStatsPanel } = useUiStore();
+  const {
+    searchQuery,
+    setSearchResults,
+    expandedCards,
+    expandAll,
+    collapseAll,
+    isStatsPanelExpanded,
+    toggleStatsPanel,
+  } = useUiStore();
 
   // 获取当前选中的文件信息
   const selectedFile = files.find(f => f.id === selectedFileId);
@@ -66,6 +74,12 @@ function App() {
     const results = filteredMessages.map(m => m.id);
     setSearchResults(results);
   }, [filteredMessages, setSearchResults]);
+
+  // 当切换到另外一个文件时，重置卡片展开状态，避免上一个文件的展开/折叠状态污染新文件的展示
+  useEffect(() => {
+    if (!selectedFileId) return;
+    collapseAll();
+  }, [selectedFileId, collapseAll]);
 
   // 快捷键：E 键展开/折叠所有工具卡片，T 键展开/折叠所有 Thinking 卡片
   useKeyboard({
@@ -155,6 +169,7 @@ function App() {
           <MessageCard
             key={message.id}
             message={message}
+            messageIndex={message.sessionIndex}
             searchQuery={searchQuery}
           />
         ))

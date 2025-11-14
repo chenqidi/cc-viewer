@@ -21,12 +21,16 @@ export interface ParsedMessage {
   id: string; // uuid
   type: MessageType;
   role: 'user' | 'assistant' | 'system';
+  // 在当前会话中的顺序索引（从 0 开始）
+  sessionIndex: number;
   timestamp: Date;
   parentId?: string;
   isSidechain: boolean;
 
   // 消息内容
   textContent?: string; // Markdown
+  // 当 message.content 为数组时，保留原始的分段内容，便于逐段渲染
+  markdownSegments?: string[];
   thinkingContent?: string;
   toolCalls?: ToolCall[];
 
