@@ -1,12 +1,51 @@
+import { useState } from 'react';
 import { Button } from '../ui/button';
 import { highlightText } from '../../lib/utils';
-import { TOOL_NAMES, TOOL_ICONS } from '../../types/ui';
 import type { ToolCall } from '../../types/app';
 
 interface ToolCallContentProps {
   toolCalls: ToolCall[];
   searchQuery?: string;
   isExpanded?: boolean;
+}
+
+interface CollapsibleParamValueProps {
+  value: string;
+}
+
+function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
+  const [expanded, setExpanded] = useState(false);
+  const lines = value.split(/\r?\n/);
+  const hasMultipleLines = lines.length > 1;
+  const displayText = expanded || !hasMultipleLines ? value : lines[0];
+
+  const handleToggle = () => {
+    if (hasMultipleLines) {
+      setExpanded((prev) => !prev);
+    }
+  };
+
+  return (
+    <div className="flex-1">
+      <div
+        className={
+          'whitespace-pre-wrap break-words ' +
+          (hasMultipleLines ? 'cursor-pointer' : 'cursor-text')
+        }
+        onClick={handleToggle}
+      >
+        {displayText}
+      </div>
+      {hasMultipleLines && (
+        <div
+          className="mt-1 text-[10px] text-text-secondary cursor-pointer select-none"
+          onClick={handleToggle}
+        >
+          {expanded ? '收起' : `展开全部（${lines.length} 行）`}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: ToolCallContentProps) {
@@ -44,7 +83,8 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
         {`tool: ${tool.name}`}
       </div>
 
-      {/* 工具参数：紧跟在 tool 行后面，多个参数就是多块 */}
+      {/* 工具参数：紧跟在 tool 行后面，多个参数就是多块。
+          规则：如果某个参数的文本有 2 行或以上，则默认折叠，只展示首行，点击后再展开/收起。 */}
       {Object.keys(tool.input).length > 0 && (
         <div className="space-y-1">
           {Object.entries(tool.input).map(([key, value]) => {
@@ -70,9 +110,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
                 <span className="font-semibold text-text-secondary break-keep">
                   {key}:
                 </span>
-                <span className="whitespace-pre-wrap break-words">
-                  {displayValue}
-                </span>
+                <CollapsibleParamValue value={displayValue} />
               </div>
             );
           })}

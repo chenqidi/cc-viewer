@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { cn, highlightText, formatTimestamp } from '../../lib/utils';
@@ -41,6 +41,9 @@ const typeConfig: Record<
   },
 };
 
+const COLLAPSIBLE_CARD_TYPES = new Set<CardType>(['assistant', 'user', 'system']);
+const COLLAPSED_CONTENT_MAX_HEIGHT = 320; // px
+
 interface UnifiedCardProps {
   type: CardType;
   messageId: string;
@@ -70,16 +73,67 @@ export function UnifiedCard({
   defaultExpanded = true,
   renderAsMarkdown = false,
 }: UnifiedCardProps) {
-  const { expandedCards, toggleCard } = useUiStore();
+  const { expandedCards, toggleCard, registerCard } = useUiStore();
 
   // 使用全局状态，如果没有记录则使用 defaultExpanded
   const cardId = `${type}-${messageId}`;
-  const isExpanded = expandedCards.has(cardId) ? true : (expandedCards.size === 0 ? defaultExpanded : false);
+  useEffect(() => {
+    registerCard(cardId, defaultExpanded);
+  }, [cardId, defaultExpanded, registerCard]);
+  const storedState = expandedCards[cardId];
+  const isExpanded = typeof storedState === 'boolean' ? storedState : defaultExpanded;
+  const isThinkingCard = type === 'thinking';
 
   const isStringContent = typeof content === 'string';
   const isStringArrayContent = Array.isArray(content) && content.every(item => typeof item === 'string');
   const hasCopyText = typeof copyText === 'string' && copyText.length > 0;
   const { Icon, iconColorClass } = typeConfig[type];
+  const shouldClampContent =
+    COLLAPSIBLE_CARD_TYPES.has(type) && (isStringContent || isStringArrayContent);
+  const contentContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isContentCollapsed, setIsContentCollapsed] = useState(true);
+  const [isContentOverflowing, setIsContentOverflowing] = useState(false);
+
+  useEffect(() => {
+    if (!shouldClampContent) {
+      setIsContentCollapsed(true);
+      setIsContentOverflowing(false);
+      return;
+    }
+
+    if (!isExpanded) {
+      setIsContentCollapsed(true);
+      setIsContentOverflowing(false);
+      return;
+    }
+
+    const element = contentContainerRef.current;
+    if (!element) return;
+
+    const checkOverflow = () => {
+      const overflow = element.scrollHeight > COLLAPSED_CONTENT_MAX_HEIGHT;
+      setIsContentOverflowing(overflow);
+    };
+
+    checkOverflow();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => {
+      checkOverflow();
+    });
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [shouldClampContent, isExpanded, content]);
+
+  const handleToggleContentCollapsed = () => {
+    setIsContentCollapsed((prev) => !prev);
+  };
 
   const handleCopy = () => {
     if (hasCopyText) {
@@ -87,7 +141,14 @@ export function UnifiedCard({
     }
   };
 
-  const renderContent = () => {
+  const renderContent = (truncateToFirstLine = false) => {
+    const applyTruncate = (text: string): string => {
+      if (!truncateToFirstLine) return text;
+      const index = text.search(/\r?\n/);
+      if (index === -1) return text;
+      return text.slice(0, index);
+    };
+
     // ReactNode 直接渲染
     if (!isStringContent && !isStringArrayContent) {
       return content;
@@ -95,43 +156,50 @@ export function UnifiedCard({
 
     // Markdown 渲染
     if (renderAsMarkdown) {
-      const renderMarkdownBlock = (markdown: string, key?: number) => (
-        <div key={key}>
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              code({ inline, className, children }) {
-                // 使用 inline 判断块级/行内：
-                // - 三反引号 / 缩进代码块：inline === false
-                // - 单反引号行内代码：inline === true
-                const match = /language-([\w-]+)/.exec(className || '');
-                const language = match ? match[1] : '';
-                const isCodeBlock = inline === false;
-                const code = String(children).replace(/\n$/, '');
+      const renderMarkdownBlock = (markdown: string, key?: number) => {
+        const source = applyTruncate(markdown);
+        return (
+          <div key={key}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code(codeProps) {
+                  const { inline, className, children } = codeProps as {
+                    inline?: boolean;
+                    className?: string;
+                    children: ReactNode;
+                  };
+                  // 使用 inline 判断块级/行内：
+                  // - 三反引号 / 缩进代码块：inline === false
+                  // - 单反引号行内代码：inline === true
+                  const match = /language-([\w-]+)/.exec(className || '');
+                  const language = match ? match[1] : '';
+                  const isCodeBlock = inline === false;
+                  const code = String(children).replace(/\n$/, '');
 
-                // 块级代码：统一走 CodeBlock（即使没有显式语言）
-                if (isCodeBlock) {
+                  // 块级代码：统一走 CodeBlock（即使没有显式语言）
+                  if (isCodeBlock) {
+                    return (
+                      <CodeBlock
+                        code={code}
+                        language={language || undefined}
+                        showHeader={Boolean(language)}
+                      />
+                    );
+                  }
+
+                  // 行内代码：语义化 <code>，不再透传 node 等内部属性
                   return (
-                    <CodeBlock
-                      code={code}
-                      language={language || undefined}
-                      showHeader={Boolean(language)}
-                    />
+                    <code
+                      className={cn(
+                        'code-glass px-2 py-1 rounded text-sm font-mono text-text-primary',
+                        className
+                      )}
+                    >
+                      {children}
+                    </code>
                   );
-                }
-
-                // 行内代码：语义化 <code>，不再透传 node 等内部属性
-                return (
-                  <code
-                    className={cn(
-                      'code-glass px-2 py-1 rounded text-sm font-mono text-text-primary',
-                      className
-                    )}
-                  >
-                    {children}
-                  </code>
-                );
-              },
+                },
               a({ children, href }) {
                 return (
                   <a
@@ -168,10 +236,11 @@ export function UnifiedCard({
               },
             }}
           >
-            {markdown}
+            {source}
           </ReactMarkdown>
         </div>
-      );
+        );
+      };
 
       // 若传入的是字符串数组，则每段单独渲染一个 div（满足“content 里面 N 个 div”的需求）
       if (isStringArrayContent) {
@@ -194,7 +263,8 @@ export function UnifiedCard({
     // 字符串数组：非 Markdown 模式下简单拼接展示（主要用于调试场景）
     if (!isStringContent && isStringArrayContent) {
       const joined = (content as string[]).join('\n\n');
-      const displayContent = searchQuery ? highlightText(joined, searchQuery) : joined;
+      const baseText = applyTruncate(joined);
+      const displayContent = searchQuery ? highlightText(baseText, searchQuery) : baseText;
       return (
         <div
           className="text-text-primary whitespace-pre-wrap"
@@ -203,7 +273,8 @@ export function UnifiedCard({
       );
     }
 
-    const displayContent = searchQuery ? highlightText(content as string, searchQuery) : (content as string);
+    const baseText = applyTruncate(content as string);
+    const displayContent = searchQuery ? highlightText(baseText, searchQuery) : baseText;
 
     if (searchQuery) {
       return (
@@ -215,6 +286,39 @@ export function UnifiedCard({
     }
 
     return <div className="text-text-primary whitespace-pre-wrap">{content}</div>;
+  };
+
+  const thinkingRawText = isThinkingCard
+    ? isStringContent
+      ? (content as string)
+      : isStringArrayContent
+        ? (content as string[]).join('\n\n')
+        : null
+    : null;
+
+  const thinkingLineCount =
+    thinkingRawText !== null ? thinkingRawText.split(/\r?\n/).length : null;
+
+  const showThinkingToggleHint =
+    isThinkingCard && (thinkingLineCount === null || thinkingLineCount > 1);
+
+  const thinkingToggleLabel = showThinkingToggleHint
+    ? isExpanded
+      ? '收起'
+      : thinkingLineCount && thinkingLineCount > 1
+        ? `展开全部（${thinkingLineCount} 行）`
+        : '展开全部'
+    : '';
+
+  const handleThinkingContentClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!showThinkingToggleHint) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (target && target.closest('a,button,textarea,input')) {
+      return;
+    }
+    toggleCard(cardId);
   };
 
   return (
@@ -265,10 +369,56 @@ export function UnifiedCard({
         </div>
       </CardHeader>
 
-      {isExpanded && (
-        <CardContent className="card-content">
-          {renderContent()}
+      {/* Thinking 卡片：折叠状态下也展示内容，但只显示首行；展开后展示完整内容 */}
+      {isThinkingCard ? (
+        <CardContent className="card-content space-y-1">
+          <div
+            className={cn(
+              'bg-[#2a2a2a] rounded-glass px-3 py-3 border border-white/5 text-sm text-text-primary break-words transition-colors',
+              renderAsMarkdown ? 'whitespace-normal' : 'whitespace-pre-wrap',
+              showThinkingToggleHint ? 'cursor-pointer hover:bg-white/5' : 'cursor-text'
+            )}
+            onClick={handleThinkingContentClick}
+          >
+            {renderContent(!isExpanded)}
+          </div>
+          {showThinkingToggleHint && (
+            <div
+              className="text-[10px] text-text-secondary cursor-pointer select-none"
+              onClick={() => toggleCard(cardId)}
+            >
+              {thinkingToggleLabel}
+            </div>
+          )}
         </CardContent>
+      ) : (
+        isExpanded && (
+          <CardContent className="card-content">
+            <div
+              ref={shouldClampContent ? contentContainerRef : undefined}
+              className={cn(
+                shouldClampContent ? 'relative transition-[max-height] duration-300 ease-in-out' : '',
+                shouldClampContent && isContentOverflowing && isContentCollapsed
+                  ? 'max-h-[320px] overflow-hidden'
+                  : ''
+              )}
+            >
+              {renderContent()}
+              {shouldClampContent && isContentOverflowing && isContentCollapsed && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#1F1F1F] via-[#1F1F1F]/70 to-transparent" />
+              )}
+            </div>
+            {shouldClampContent && isContentOverflowing && (
+              <button
+                type="button"
+                onClick={handleToggleContentCollapsed}
+                className="mt-2 text-xs text-accent-blue hover:text-accent-cyan transition-colors"
+              >
+                {isContentCollapsed ? '展开全部' : '收起'}
+              </button>
+            )}
+          </CardContent>
+        )
       )}
     </Card>
   );

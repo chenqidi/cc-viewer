@@ -15,6 +15,15 @@ interface ToolResultPreviewProps {
 
 function ToolResultPreview({ text }: ToolResultPreviewProps) {
   const [expanded, setExpanded] = useState(false);
+  const lines = text.split(/\r?\n/);
+  const hasMultipleLines = lines.length > 1;
+  const displayText = expanded || !hasMultipleLines ? text : lines[0];
+
+  const handleToggle = () => {
+    if (hasMultipleLines) {
+      setExpanded((prev) => !prev);
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -22,8 +31,11 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
         tool result:
       </div>
       <div
-        className="code-glass rounded-glass cursor-pointer"
-        onClick={() => setExpanded((prev) => !prev)}
+        className={
+          'code-glass rounded-glass ' +
+          (hasMultipleLines ? 'cursor-pointer' : 'cursor-text')
+        }
+        onClick={handleToggle}
       >
         <pre
           className={
@@ -31,9 +43,17 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
             (expanded ? 'max-h-[480px] overflow-y-auto' : 'max-h-24 overflow-hidden')
           }
         >
-          {text}
+          {displayText}
         </pre>
       </div>
+      {hasMultipleLines && (
+        <div
+          className="text-[10px] text-text-secondary cursor-pointer select-none"
+          onClick={handleToggle}
+        >
+          {expanded ? '收起' : `展开全部（${lines.length} 行）`}
+        </div>
+      )}
     </div>
   );
 }
@@ -41,19 +61,6 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
 export function MessageCard({ message, messageIndex, searchQuery }: MessageCardProps) {
   const raw: any = message.raw || {};
   const baseTypeLabel: string = raw.type || message.type;
-
-  // 选择用于样式的卡片类型（只控制图标和颜色）
-  let cardType: 'user' | 'assistant' | 'system' | 'thinking' | 'tool';
-  if (message.type === 'user') {
-    cardType = 'user';
-  } else if (message.type === 'assistant') {
-    cardType = 'assistant';
-  } else if (message.type === 'system') {
-    cardType = 'system';
-  } else {
-    // 其它类型（summary / file-history-snapshot 等）先按 system 风格展示
-    cardType = 'system';
-  }
 
   // 计算 labelBase：
   // - 默认是原始 JSON 的 type（user/assistant/system/summary/...）
@@ -87,6 +94,27 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
         labelBase = `${baseTypeLabel}.tool_result`;
       }
     }
+  }
+
+  // 选择用于样式的卡片类型（只控制图标和颜色）
+  let cardType: 'user' | 'assistant' | 'system' | 'thinking' | 'tool';
+  if (message.type === 'user') {
+    cardType = 'user';
+  } else if (message.type === 'assistant') {
+    if (isToolUseOnly && message.toolCalls && message.toolCalls.length > 0) {
+      // 纯 tool_use 的 assistant 消息，用工具风格（wrench 图标），方便 E 键统一控制
+      cardType = 'tool';
+    } else if (isThinkingOnly) {
+      // 纯 thinking 的 assistant 消息，用 thinking 风格（sparkles 图标），方便 T 键统一控制
+      cardType = 'thinking';
+    } else {
+      cardType = 'assistant';
+    }
+  } else if (message.type === 'system') {
+    cardType = 'system';
+  } else {
+    // 其它类型（summary / file-history-snapshot 等）先按 system 风格展示
+    cardType = 'system';
   }
 
   // 决定内容和是否按 Markdown 渲染
@@ -150,7 +178,7 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
   const indexText = `${messageIndex + 1}`;
   const label = labelBase;
 
-  // assistant.thinking 卡片默认折叠
+  // assistant.thinking 卡片默认折叠（但后续会在 UnifiedCard 里改成“折叠时展示首行”）
   const defaultExpanded =
     message.type === 'assistant' && isThinkingOnly ? false : true;
 

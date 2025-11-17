@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
 interface UiStore {
-  // 折叠状态
-  expandedCards: Set<string>;
+  // 折叠状态，key 为 cardId，value 为当前展开状态
+  expandedCards: Record<string, boolean>;
 
   // 消息搜索
   searchQuery: string;
@@ -18,8 +18,10 @@ interface UiStore {
   isStatsPanelExpanded: boolean;
 
   // Actions
+  registerCard: (cardId: string, defaultExpanded: boolean) => void;
   toggleCard: (cardId: string) => void;
   expandAll: (messageIds: string[]) => void;
+  collapseCards: (messageIds: string[]) => void;
   collapseAll: () => void;
   setSearchQuery: (query: string) => void;
   setSearchResults: (results: string[]) => void;
@@ -31,31 +33,67 @@ interface UiStore {
 }
 
 export const useUiStore = create<UiStore>((set) => ({
-  expandedCards: new Set(),
+  expandedCards: {},
   searchQuery: '',
   searchResults: [],
   fileSearchQuery: '',
   selectedMessageId: null,
   isStatsPanelExpanded: false,
 
+  registerCard: (cardId: string, defaultExpanded: boolean) => {
+    set((state) => {
+      if (state.expandedCards[cardId] !== undefined) {
+        return state;
+      }
+      return {
+        expandedCards: {
+          ...state.expandedCards,
+          [cardId]: defaultExpanded,
+        },
+      };
+    });
+  },
+
   toggleCard: (cardId: string) => {
     set((state) => {
-      const expanded = new Set(state.expandedCards);
-      if (expanded.has(cardId)) {
-        expanded.delete(cardId);
-      } else {
-        expanded.add(cardId);
-      }
-      return { expandedCards: expanded };
+      const current = state.expandedCards[cardId] ?? false;
+      return {
+        expandedCards: {
+          ...state.expandedCards,
+          [cardId]: !current,
+        },
+      };
     });
   },
 
   expandAll: (messageIds: string[]) => {
-    set({ expandedCards: new Set(messageIds) });
+    if (messageIds.length === 0) {
+      return;
+    }
+    set((state) => {
+      const expandedCards = { ...state.expandedCards };
+      messageIds.forEach((id) => {
+        expandedCards[id] = true;
+      });
+      return { expandedCards };
+    });
+  },
+
+  collapseCards: (messageIds: string[]) => {
+    if (messageIds.length === 0) {
+      return;
+    }
+    set((state) => {
+      const expandedCards = { ...state.expandedCards };
+      messageIds.forEach((id) => {
+        expandedCards[id] = false;
+      });
+      return { expandedCards };
+    });
   },
 
   collapseAll: () => {
-    set({ expandedCards: new Set() });
+    set({ expandedCards: {} });
   },
 
   setSearchQuery: (query: string) => {

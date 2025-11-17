@@ -21,6 +21,7 @@ function App() {
     setSearchResults,
     expandedCards,
     expandAll,
+    collapseCards,
     collapseAll,
     isStatsPanelExpanded,
     toggleStatsPanel,
@@ -81,6 +82,15 @@ function App() {
     collapseAll();
   }, [selectedFileId, collapseAll]);
 
+  const resolveExpandedState = (cardId: string) => {
+    const state = expandedCards[cardId];
+    if (typeof state === 'boolean') {
+      return state;
+    }
+    // thinking 卡片默认折叠，其它卡片默认展开
+    return cardId.startsWith('thinking-') ? false : true;
+  };
+
   // 快捷键：E 键展开/折叠所有工具卡片，T 键展开/折叠所有 Thinking 卡片
   useKeyboard({
     shortcuts: [
@@ -95,11 +105,11 @@ function App() {
           if (toolMessageIds.length === 0) return;
 
           // 检查是否有任何工具卡片已展开
-          const anyExpanded = toolMessageIds.some(id => expandedCards.has(id));
+          const anyExpanded = toolMessageIds.some(id => resolveExpandedState(id));
 
           if (anyExpanded) {
             // 如果有展开的，折叠所有
-            collapseAll();
+            collapseCards(toolMessageIds);
           } else {
             // 如果全部折叠，展开所有
             expandAll(toolMessageIds);
@@ -118,11 +128,11 @@ function App() {
           if (thinkingMessageIds.length === 0) return;
 
           // 检查是否有任何 Thinking 卡片已展开
-          const anyExpanded = thinkingMessageIds.some(id => expandedCards.has(id));
+          const anyExpanded = thinkingMessageIds.some(id => resolveExpandedState(id));
 
           if (anyExpanded) {
             // 如果有展开的，折叠所有
-            collapseAll();
+            collapseCards(thinkingMessageIds);
           } else {
             // 如果全部折叠，展开所有
             expandAll(thinkingMessageIds);
