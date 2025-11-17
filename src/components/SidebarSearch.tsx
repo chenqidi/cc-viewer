@@ -89,7 +89,7 @@ export function SidebarSearch() {
       </h1>
       <button
         onClick={enterSearchMode}
-        className="p-2 text-text-secondary hover:text-text-primary hover:bg-card-user rounded-brutal transition-colors"
+        className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted rounded-brutal transition-colors"
         title="搜索文件"
       >
         <Search className="w-4 h-4" />

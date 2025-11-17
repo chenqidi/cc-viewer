@@ -1,3 +1,32 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const palette = require('./src/theme/palette.json');
+const cssVariableMap = require('./src/theme/css-variable-map.json');
+
+const resolvePath = (obj, path) => {
+  return path.reduce((acc, key) => {
+    if (acc && typeof acc === 'object' && key in acc) {
+      return acc[key];
+    }
+    return undefined;
+  }, obj);
+};
+
+const buildCssVariableDefaults = (theme) => {
+  return Object.entries(cssVariableMap).reduce((acc, [cssVar, pathParts]) => {
+    const value = resolvePath(theme, pathParts);
+    if (typeof value === 'string') {
+      acc[cssVar] = value;
+    }
+    return acc;
+  }, {});
+};
+
+const defaultThemeId = palette.defaultThemeId;
+const defaultTheme = palette.themes[defaultThemeId] ?? Object.values(palette.themes)[0];
+const cssVarDefaults = buildCssVariableDefaults(defaultTheme);
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
@@ -19,40 +48,45 @@ export default {
     },
     extend: {
       colors: {
-        // Glass Morphism 配色方案
         background: {
-          DEFAULT: '#2B2B2B',
-          sidebar: '#232323',
-          card: 'rgba(47, 47, 47, 0.6)',
-          header: '#1F1F1F',
-          footer: '#1A1A1A',
+          DEFAULT: 'var(--color-background-primary)',
+          sidebar: 'var(--color-background-sidebar)',
+          card: 'var(--color-background-card)',
+          header: 'var(--color-background-header)',
+          footer: 'var(--color-background-footer)',
         },
-        // 玻璃态卡片背景
-        'glass-card': 'rgba(47, 47, 47, 0.6)',
-        // 角色主题色（用于header背景）
-        'theme-user': 'rgba(102, 153, 204, 0.1)',
-        'theme-assistant': 'rgba(204, 153, 204, 0.1)',
-        'theme-tool': 'rgba(102, 204, 204, 0.1)',
-        'theme-thinking': 'rgba(255, 204, 102, 0.1)',
-        'theme-system': 'rgba(153, 204, 153, 0.1)',
+        surface: {
+          muted: 'var(--color-surface-muted)',
+          badge: 'var(--color-surface-badge)',
+          code: 'var(--color-code-block-background)',
+          codeHeader: 'var(--color-surface-code-header)',
+          skeleton: 'var(--color-surface-skeleton)',
+          glass: 'var(--color-surface-glass)',
+        },
+        'glass-card': 'var(--color-surface-glass)',
+        'theme-user': 'var(--color-tint-user)',
+        'theme-assistant': 'var(--color-tint-assistant)',
+        'theme-tool': 'var(--color-tint-tool)',
+        'theme-thinking': 'var(--color-tint-thinking)',
+        'theme-system': 'var(--color-tint-system)',
         accent: {
-          cyan: '#bc9852',
-          pink: '#F2777A',
-          yellow: '#FFCC66',
-          blue: '#6699CC',
-          green: '#99CC99',
-          orange: '#F99157',
-          purple: '#CC99CC',
+          cyan: 'var(--color-accent-cyan)',
+          pink: 'var(--color-accent-pink)',
+          yellow: 'var(--color-accent-yellow)',
+          blue: 'var(--color-accent-blue)',
+          green: 'var(--color-accent-green)',
+          orange: 'var(--color-accent-orange)',
+          purple: 'var(--color-accent-purple)',
         },
         text: {
-          primary: '#D3D0C8',
-          secondary: '#999999',
-          muted: '#747369',
-          link: '#6699CC',
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          muted: 'var(--color-text-muted)',
+          link: 'var(--color-text-link)',
         },
         border: {
-          DEFAULT: 'rgba(255, 255, 255, 0.1)',
-          hover: 'rgba(255, 255, 255, 0.2)',
+          DEFAULT: 'var(--color-border)',
+          hover: 'var(--color-border-hover)',
         },
       },
       borderRadius: {
@@ -71,5 +105,12 @@ export default {
       },
     },
   },
-  plugins: [require("@tailwindcss/typography")],
+  plugins: [
+    require("@tailwindcss/typography"),
+    ({ addBase }) => {
+      addBase({
+        ':root': cssVarDefaults,
+      });
+    },
+  ],
 }

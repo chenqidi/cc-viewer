@@ -375,7 +375,7 @@ export function UnifiedCard({
         <CardContent className="card-content space-y-1">
           <div
             className={cn(
-              'bg-[#2a2a2a] rounded-glass px-3 py-3 border border-white/5 text-sm text-text-primary break-words transition-colors',
+              'bg-surface-muted rounded-glass px-3 py-3 border border-white/5 text-sm text-text-primary break-words transition-colors',
               renderAsMarkdown ? 'whitespace-normal' : 'whitespace-pre-wrap',
               showThinkingToggleHint ? 'cursor-pointer hover:bg-white/5' : 'cursor-text'
             )}
@@ -404,7 +404,7 @@ export function UnifiedCard({
             >
               {renderContent()}
               {shouldClampContent && isContentOverflowing && isContentCollapsed && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#1F1F1F] via-[#1F1F1F]/70 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[var(--color-overlay-strong)] via-[var(--color-overlay-soft)] to-transparent" />
               )}
             </div>
             {shouldClampContent && isContentOverflowing && (

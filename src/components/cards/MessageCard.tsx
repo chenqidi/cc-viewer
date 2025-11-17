@@ -29,7 +29,7 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
   return (
     <div className="space-y-2">
       <div>
-        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-[#1f1f1f] rounded-glass brutal-border">
+        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-surface-badge rounded-glass brutal-border">
           Result
         </span>
       </div>

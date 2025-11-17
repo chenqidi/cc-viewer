@@ -39,8 +39,8 @@ export function LoadingSkeleton({ className, rows = 3 }: LoadingSkeletonProps) {
           key={i}
           className="animate-pulse"
         >
-          <div className="h-4 bg-[#3a3a3a] rounded w-full mb-2"></div>
-          <div className="h-4 bg-[#3a3a3a] rounded w-5/6"></div>
+          <div className="h-4 bg-surface-skeleton rounded w-full mb-2"></div>
+          <div className="h-4 bg-surface-skeleton rounded w-5/6"></div>
         </div>
       ))}
     </div>

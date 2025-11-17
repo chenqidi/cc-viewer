@@ -80,7 +80,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
     <>
       {/* 工具名称（纯文本形式，如 "tool: Read"） */}
       <div className="mb-2">
-        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-[#1f1f1f] rounded-glass brutal-border">
+        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-surface-badge rounded-glass brutal-border">
           {`${tool.name}`}
         </span>
       </div>
@@ -107,7 +107,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
             return (
               <div
                 key={key}
-                className="bg-[#2a2a2a] rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2"
+                className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2"
               >
                 <span className="font-semibold text-text-secondary break-keep">
                   {key}:
@@ -123,7 +123,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
       {tool.result && (
         <div className="mt-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-[#1f1f1f] rounded-glass brutal-border">
+            <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-surface-badge rounded-glass brutal-border">
               结果
             </span>
             <Button

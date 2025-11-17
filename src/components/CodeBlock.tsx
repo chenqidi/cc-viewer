@@ -53,7 +53,7 @@ export function CodeBlock({
     <div className={`relative group ${className}`}>
       {/* 语言标签和复制按钮 */}
       {showHeader && (
-        <div className="flex items-center justify-between bg-[#272E36] px-4 py-2 border-b-2 border-border">
+        <div className="flex items-center justify-between bg-surface-codeHeader px-4 py-2 border-b-2 border-border">
           <span className="text-xs text-text-secondary uppercase font-mono">
             {validLanguage}
           </span>

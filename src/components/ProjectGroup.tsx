@@ -68,7 +68,7 @@ export function ProjectGroup({
         onClick={() => setIsExpanded(!isExpanded)}
         className={`
           w-full px-4 py-1.5 text-left transition-colors
-          ${isExpanded ? 'bg-[#1f1f1f]' : 'hover:bg-[#1f1f1f]'}
+          ${isExpanded ? 'bg-background-header' : 'hover:bg-background-header'}
         `}
       >
         {/* 项目名 + 折叠图标 + 日期信息（时间与项目名左对齐） */}
@@ -123,7 +123,7 @@ function FileItem({ file, isSelected, isLoading, onClick }: FileItemProps) {
       className={`
         group w-full pl-9 pr-4 py-1.5 text-left transition-colors
         flex items-start justify-between gap-2
-        ${isSelected ? 'bg-[#2a2a2a]' : ''}
+        ${isSelected ? 'bg-surface-muted' : ''}
         ${isLoading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}
       `}
     >

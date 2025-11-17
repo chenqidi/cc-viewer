@@ -1,0 +1,79 @@
+{
+  "defaultThemeId": "spacegray",
+  "themes": {
+    "spacegray": {
+      "label": "Spacegray Eighties",
+      "description": "低饱和度的玻璃态深色主题，灵感来自 Spacegray Eighties 配色。",
+      "colors": {
+        "background": {
+          "primary": "#2B2B2B",
+          "sidebar": "#232323",
+          "card": "rgba(47, 47, 47, 0.6)",
+          "header": "#1F1F1F",
+          "footer": "#1A1A1A"
+        },
+        "surfaces": {
+          "muted": "#2A2A2A",
+          "badge": "#1F1F1F",
+          "codeHeader": "#272E36",
+          "codeBlock": "#2A2A2A",
+          "skeleton": "#3A3A3A",
+          "glass": "rgba(47, 47, 47, 0.6)",
+          "overlayBase": "#1F1F1F",
+          "overlaySoft": "rgba(31, 31, 31, 0.7)"
+        },
+        "cards": {
+          "user": "#3A3A3A",
+          "assistant": "#353535",
+          "tool": "#2F4F4F",
+          "thinking": "#3D3356",
+          "system": "#4F2F2F"
+        },
+        "tints": {
+          "user": "rgba(102, 153, 204, 0.1)",
+          "assistant": "rgba(204, 153, 204, 0.1)",
+          "tool": "rgba(102, 204, 204, 0.1)",
+          "thinking": "rgba(255, 204, 102, 0.1)",
+          "system": "rgba(153, 204, 153, 0.1)"
+        },
+        "accent": {
+          "cyan": "#bc9852",
+          "pink": "#F2777A",
+          "yellow": "#FFCC66",
+          "blue": "#6699CC",
+          "green": "#99CC99",
+          "orange": "#F99157",
+          "purple": "#CC99CC"
+        },
+        "text": {
+          "primary": "#D3D0C8",
+          "secondary": "#999999",
+          "muted": "#747369",
+          "link": "#6699CC"
+        },
+        "border": {
+          "base": "rgba(255, 255, 255, 0.1)",
+          "hover": "rgba(255, 255, 255, 0.2)"
+        },
+        "code": {
+          "blockBackground": "#2A2A2A",
+          "blockForeground": "#C9C6BC"
+        },
+        "syntax": {
+          "comment": "#747369",
+          "keyword": "#CC99CC",
+          "string": "#99CC99",
+          "function": "#66CCCC",
+          "number": "#F99157",
+          "operator": "#F2777A",
+          "variable": "#D3D0C8"
+        },
+        "scrollbar": {
+          "track": "#232323",
+          "thumb": "#4A4A4A",
+          "thumbHover": "#5A5A5A"
+        }
+      }
+    }
+  }
+}

@@ -27,16 +27,16 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #232323;
+    background: var(--color-scrollbar-track);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #4A4A4A;
-    border: 2px solid #232323;
+    background: var(--color-scrollbar-thumb);
+    border: 2px solid var(--color-scrollbar-track);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #5A5A5A;
+    background: var(--color-scrollbar-thumb-hover);
   }
 }
 
@@ -132,14 +132,15 @@
 
   /* 代码块背景 - 玻璃态 */
   .code-glass {
-    @apply bg-[#2a2a2a] backdrop-blur-sm border border-border rounded-glass;
+    @apply bg-surface-muted backdrop-blur-sm border border-border rounded-glass;
+    color: var(--color-code-block-foreground);
   }
 
   /* Prism 代码块配色覆盖 - 使用 SpaceGray Eighties 风格 */
   /* 只针对 Markdown 内容区域（.prose-*），避免影响工具结果等其它 <pre> */
   .card-content .prose-sm pre {
-    background-color: #2a2a2a;
-    color: #C9C6BC;
+    background-color: var(--color-code-block-background);
+    color: var(--color-code-block-foreground);
     @apply border border-border rounded-glass;
   }
 

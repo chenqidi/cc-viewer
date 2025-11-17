@@ -8,11 +8,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "brutal-border brutal-shadow-sm bg-background text-text-primary hover:bg-card-user active:translate-x-1 active:translate-y-1 active:shadow-none",
+          "brutal-border brutal-shadow-sm bg-background text-text-primary hover:bg-surface-muted active:translate-x-1 active:translate-y-1 active:shadow-none",
         primary:
           "brutal-border brutal-shadow-sm bg-accent-cyan text-black hover:opacity-90 active:translate-x-1 active:translate-y-1 active:shadow-none",
         ghost:
-          "hover:bg-card-user hover:text-text-primary",
+          "hover:bg-surface-muted hover:text-text-primary",
       },
       size: {
         default: "h-10 px-4 py-2",
