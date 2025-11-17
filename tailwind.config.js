@@ -6,6 +6,17 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    borderRadius: {
+      none: '0px',
+      sm: '2px',
+      DEFAULT: '2px',
+      md: '2px',
+      lg: '2px',
+      xl: '2px',
+      '2xl': '2px',
+      '3xl': '2px',
+      full: '2px',
+    },
     extend: {
       colors: {
         // Glass Morphism 配色方案
@@ -25,7 +36,7 @@ export default {
         'theme-thinking': 'rgba(255, 204, 102, 0.1)',
         'theme-system': 'rgba(153, 204, 153, 0.1)',
         accent: {
-          cyan: '#66CCCC',
+          cyan: '#bc9852',
           pink: '#F2777A',
           yellow: '#FFCC66',
           blue: '#6699CC',
@@ -46,7 +57,7 @@ export default {
       },
       borderRadius: {
         brutal: '2px',
-        glass: '8px',
+        glass: '2px',
       },
       boxShadow: {
         brutal: '8px 8px 0 rgba(0, 0, 0, 0.6)',

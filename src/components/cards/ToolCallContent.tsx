@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../ui/button';
 import { highlightText } from '../../lib/utils';
 import type { ToolCall } from '../../types/app';
+import { CollapseToggle } from './CollapseToggle';
 
 interface ToolCallContentProps {
   toolCalls: ToolCall[];
@@ -37,12 +38,11 @@ function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
         {displayText}
       </div>
       {hasMultipleLines && (
-        <div
-          className="mt-1 text-[10px] text-text-secondary cursor-pointer select-none"
+        <CollapseToggle
+          className="mt-1"
+          label={expanded ? '收起' : `展开全部（${lines.length} 行）`}
           onClick={handleToggle}
-        >
-          {expanded ? '收起' : `展开全部（${lines.length} 行）`}
-        </div>
+        />
       )}
     </div>
   );
@@ -61,7 +61,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
   const tool = toolCalls[0];
 
   // 获取工具名称列表（折叠时显示）
-  const toolNames = `tool: ${tool.name}`;
+  const toolNames = `${tool.name}`;
 
   if (!isExpanded) {
     return (
@@ -79,8 +79,10 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
   return (
     <>
       {/* 工具名称（纯文本形式，如 "tool: Read"） */}
-      <div className="text-xs text-text-secondary mb-2">
-        {`tool: ${tool.name}`}
+      <div className="mb-2">
+        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-[#1f1f1f] rounded-glass brutal-border">
+          {`${tool.name}`}
+        </span>
       </div>
 
       {/* 工具参数：紧跟在 tool 行后面，多个参数就是多块。
@@ -121,7 +123,9 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
       {tool.result && (
         <div className="mt-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-text-secondary font-medium">结果:</p>
+            <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-[#1f1f1f] rounded-glass brutal-border">
+              结果
+            </span>
             <Button
               variant="ghost"
               size="sm"

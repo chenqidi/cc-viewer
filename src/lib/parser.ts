@@ -188,14 +188,14 @@ export function transformToMessage(record: JsonlRecord, index: number): ParsedMe
                 return `- ${key}: ${displayValue}`;
               });
 
-              const header = typeof item.name === 'string' ? `tool: ${item.name}` : 'tool';
+              const header = typeof item.name === 'string' ? `${item.name}` : 'tool';
               markdownSegments.push(`${header}\n\n${paramLines.join('\n')}`);
             } else {
-              const header = typeof item.name === 'string' ? `tool: ${item.name}` : 'tool';
+              const header = typeof item.name === 'string' ? `${item.name}` : 'tool';
               markdownSegments.push(header);
             }
           } else {
-            const header = typeof item.name === 'string' ? `tool: ${item.name}` : 'tool';
+            const header = typeof item.name === 'string' ? `${item.name}` : 'tool';
             markdownSegments.push(header);
           }
         } else {

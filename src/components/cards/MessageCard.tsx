@@ -2,6 +2,7 @@ import type { ParsedMessage } from '../../types/app';
 import { ReactNode, useState } from 'react';
 import { UnifiedCard } from './UnifiedCard';
 import { ToolCallContent } from './ToolCallContent';
+import { CollapseToggle } from './CollapseToggle';
 
 interface MessageCardProps {
   message: ParsedMessage;
@@ -27,8 +28,10 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
 
   return (
     <div className="space-y-2">
-      <div className="text-sm font-semibold text-text-primary">
-        tool result:
+      <div>
+        <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-[#1f1f1f] rounded-glass brutal-border">
+          Result
+        </span>
       </div>
       <div
         className={
@@ -47,12 +50,10 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
         </pre>
       </div>
       {hasMultipleLines && (
-        <div
-          className="text-[10px] text-text-secondary cursor-pointer select-none"
+        <CollapseToggle
+          label={expanded ? '收起' : `展开全部（${lines.length} 行）`}
           onClick={handleToggle}
-        >
-          {expanded ? '收起' : `展开全部（${lines.length} 行）`}
-        </div>
+        />
       )}
     </div>
   );

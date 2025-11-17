@@ -9,6 +9,7 @@ import { User, Bot, Cpu, Sparkles, Wrench, Copy, ChevronDown, ChevronRight } fro
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from '../CodeBlock';
 import type { TokenUsage } from '../../types/app';
+import { CollapseToggle } from './CollapseToggle';
 
 type CardType = 'user' | 'assistant' | 'system' | 'thinking' | 'tool';
 
@@ -383,12 +384,10 @@ export function UnifiedCard({
             {renderContent(!isExpanded)}
           </div>
           {showThinkingToggleHint && (
-            <div
-              className="text-[10px] text-text-secondary cursor-pointer select-none"
+            <CollapseToggle
+              label={thinkingToggleLabel}
               onClick={() => toggleCard(cardId)}
-            >
-              {thinkingToggleLabel}
-            </div>
+            />
           )}
         </CardContent>
       ) : (
@@ -412,7 +411,7 @@ export function UnifiedCard({
               <button
                 type="button"
                 onClick={handleToggleContentCollapsed}
-                className="mt-2 text-xs text-accent-blue hover:text-accent-cyan transition-colors"
+                className="mt-2 text-xs text-text-secondary hover:text-text-primary transition-colors"
               >
                 {isContentCollapsed ? '展开全部' : '收起'}
               </button>
