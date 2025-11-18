@@ -11,7 +11,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [],
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
