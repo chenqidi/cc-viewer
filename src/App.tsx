@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import { Button } from "./components/ui/button";
 import { Dialog } from "./components/ui/dialog";
 import { MainLayout } from "./components/layout/MainLayout";
@@ -15,7 +15,7 @@ import { calculateStats } from "./lib/stats";
 import { useKeyboard } from "./hooks/useKeyboard";
 
 function App() {
-  const { selectedFileId, currentMessages, files } = useFileStore();
+  const { selectedFileId, currentMessages, files, refreshFile, isMessageLoading } = useFileStore();
   const {
     searchQuery,
     setSearchResults,
@@ -144,6 +144,12 @@ function App() {
     enabled: currentMessages.length > 0,
   });
 
+  // 刷新当前文件，追加最新内容
+  const handleRefresh = useCallback(() => {
+    if (!selectedFileId || isMessageLoading) return;
+    void refreshFile(selectedFileId);
+  }, [refreshFile, selectedFileId, isMessageLoading]);
+
   // 文件信息栏
   const fileInfo = selectedFile ? (
     <div className="flex justify-between items-center w-full gap-4">
@@ -165,7 +171,14 @@ function App() {
             📊 统计
           </Button>
         )}
-        <Button variant="ghost" size="sm">刷新</Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={!selectedFileId || isMessageLoading}
+        >
+          刷新
+        </Button>
         <Button variant="ghost" size="sm">导出</Button>
       </div>
     </div>

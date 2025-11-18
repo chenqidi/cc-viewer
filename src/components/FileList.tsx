@@ -12,7 +12,8 @@ export function FileList() {
     files,
     projects,
     selectedFileId,
-    isLoading,
+    isFileListLoading,
+    isMessageLoading,
     error,
     loadFiles,
     selectFile,
@@ -89,7 +90,7 @@ export function FileList() {
   }, [projects, files, fileSearchQuery]);
 
   // 加载状态
-  if (isLoading && files.length === 0) {
+  if (isFileListLoading && files.length === 0) {
     return (
       <div className="pb-2 pt-0">
         <LoadingSkeleton rows={3} />
@@ -138,7 +139,7 @@ export function FileList() {
           files={group.files}
           lastModified={group.lastModified}
           selectedFileId={selectedFileId}
-          isLoading={isLoading}
+          isLoading={isMessageLoading}
           onSelectFile={selectFile}
         />
       ))}

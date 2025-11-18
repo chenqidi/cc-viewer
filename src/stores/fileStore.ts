@@ -7,9 +7,11 @@ interface FileStore {
   // 状态
   files: SessionFile[];
   projects: ProjectInfo[];  // 新增：存储项目分组信息
+  currentDirectory: string | null;
   selectedFileId: string | null;
   currentMessages: ParsedMessage[];
-  isLoading: boolean;
+  isFileListLoading: boolean;
+  isMessageLoading: boolean;
   error: string | null;
 
   // Actions
@@ -22,13 +24,15 @@ interface FileStore {
 export const useFileStore = create<FileStore>((set, get) => ({
   files: [],
   projects: [],
+  currentDirectory: null,
   selectedFileId: null,
   currentMessages: [],
-  isLoading: false,
+  isFileListLoading: false,
+  isMessageLoading: false,
   error: null,
 
   loadFiles: async (directory: string) => {
-    set({ isLoading: true, error: null });
+    set({ isFileListLoading: true, error: null });
 
     try {
       // 调用 Tauri 命令，返回 ProjectInfo[]
@@ -54,9 +58,9 @@ export const useFileStore = create<FileStore>((set, get) => ({
         });
       });
 
-      set({ files, projects: projectInfos, isLoading: false });
+      set({ files, projects: projectInfos, currentDirectory: directory, isFileListLoading: false });
     } catch (error) {
-      set({ error: String(error), isLoading: false });
+      set({ error: String(error), isFileListLoading: false });
     }
   },
 
@@ -66,7 +70,7 @@ export const useFileStore = create<FileStore>((set, get) => ({
 
     // 切换文件时先清空当前消息，避免旧文件内容在加载过程中短暂残留
     set({
-      isLoading: true,
+      isMessageLoading: true,
       selectedFileId: fileId,
       currentMessages: [],
       error: null,
@@ -96,15 +100,63 @@ export const useFileStore = create<FileStore>((set, get) => ({
       set({
         currentMessages: messages,
         files: updatedFiles,
-        isLoading: false,
+        isMessageLoading: false,
       });
     } catch (error) {
-      set({ error: String(error), isLoading: false });
+      set({ error: String(error), isMessageLoading: false });
     }
   },
 
   refreshFile: async (fileId: string) => {
-    await get().selectFile(fileId);
+    const { files, currentMessages, selectedFileId } = get();
+    const file = files.find(f => f.id === fileId);
+    if (!file) return;
+
+    // 刷新时保留当前内容，只追加增量
+    set({ isMessageLoading: true, error: null });
+
+    try {
+      const content = await invoke<string>('read_file_content', {
+        filePath: file.filePath,
+      });
+
+      const messages = parseJsonlFile(content);
+
+      // 如果是当前选中的文件，并且文件只追加了内容，增量追加，避免整页重渲染
+      const hasSamePrefix = currentMessages.every(
+        (msg, index) => messages[index]?.id === msg.id
+      );
+      const shouldAppend =
+        selectedFileId === fileId &&
+        hasSamePrefix &&
+        messages.length >= currentMessages.length;
+      const appendedMessages = shouldAppend
+        ? messages.slice(currentMessages.length)
+        : messages;
+
+      const nextMessages = shouldAppend
+        ? [...currentMessages, ...appendedMessages]
+        : messages;
+
+      const updatedFiles = get().files.map(f =>
+        f.id === fileId
+          ? {
+              ...f,
+              messageCount: messages.length,
+              firstTimestamp: messages[0]?.timestamp.toISOString() || '',
+              lastTimestamp: messages[messages.length - 1]?.timestamp.toISOString() || '',
+            }
+          : f
+      );
+
+      set({
+        currentMessages: nextMessages,
+        files: updatedFiles,
+        isMessageLoading: false,
+      });
+    } catch (error) {
+      set({ error: String(error), isMessageLoading: false });
+    }
   },
 
   clearSelection: () => {

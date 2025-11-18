@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, RefreshCw } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
+import { useFileStore } from '../stores/fileStore';
 
 export function SidebarSearch() {
   const { fileSearchQuery, setFileSearchQuery, clearFileSearch } = useUiStore();
+  const { currentDirectory, loadFiles, isFileListLoading } = useFileStore();
   const [isSearchMode, setIsSearchMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -83,17 +85,30 @@ export function SidebarSearch() {
 
   // 默认模式
   return (
-    <div className="flex-shrink-0 h-16 px-4 flex items-center justify-between">
+    <div className="flex-shrink-0 h-16 px-4 flex items-center justify-between gap-2">
       <h1 className="text-lg font-semibold text-accent-cyan">
         CC Viewer
       </h1>
-      <button
-        onClick={enterSearchMode}
-        className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted rounded-brutal transition-colors"
-        title="搜索文件"
-      >
-        <Search className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={async () => {
+            if (!currentDirectory || isFileListLoading) return;
+            await loadFiles(currentDirectory);
+          }}
+          className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted rounded-brutal transition-colors disabled:opacity-50"
+          title="刷新文件列表"
+          disabled={!currentDirectory || isFileListLoading}
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+        <button
+          onClick={enterSearchMode}
+          className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted rounded-brutal transition-colors"
+          title="搜索文件"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }
