@@ -67,6 +67,12 @@ fn scan_project_directory(project_dir: &PathBuf) -> Result<ProjectInfo, String> 
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("jsonl") {
+            // 过滤掉以 "agent-" 开头的文件
+            let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+            if file_name.starts_with("agent-") {
+                continue;
+            }
+
             let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
             let modified = metadata
                 .modified()
@@ -139,9 +145,9 @@ fn scan_project_directory(project_dir: &PathBuf) -> Result<ProjectInfo, String> 
 fn extract_cwd_from_jsonl(file_path: &PathBuf) -> Result<String, String> {
     let content = fs::read_to_string(file_path).map_err(|e| e.to_string())?;
 
-    // 只读取第一行
-    if let Some(first_line) = content.lines().next() {
-        if let Ok(json) = serde_json::from_str::<Value>(first_line) {
+    // 逐行遍历，直到找到包含 cwd 的 JSON
+    for line in content.lines() {
+        if let Ok(json) = serde_json::from_str::<Value>(line) {
             if let Some(cwd) = json.get("cwd").and_then(|v| v.as_str()) {
                 return Ok(cwd.to_string());
             }
