@@ -10,8 +10,9 @@ import { StatsPanel } from "./components/StatsPanel";
 import { SearchBar } from "./components/SearchBar";
 import { SimpleEmptyState } from "./components/ui/empty-state";
 import { useFileStore } from "./stores/fileStore";
-import { useUiStore } from "./stores/uiStore";
+import { useUiStore, type SearchResultEntry } from "./stores/uiStore";
 import { calculateStats } from "./lib/stats";
+import { escapeRegex } from "./lib/utils";
 import { useKeyboard } from "./hooks/useKeyboard";
 
 function App() {
@@ -31,11 +32,15 @@ function App() {
     collapseAll,
     isStatsPanelExpanded,
     toggleStatsPanel,
+    activeSearchResult,
+    setActiveSearchResult,
   } = useUiStore();
 
   // 自动刷新状态
   const [autoRefresh, setAutoRefresh] = useState(false);
   const autoRefreshTimerRef = useRef<number | null>(null);
+  const lastSearchQueryRef = useRef(searchQuery);
+  const lastFileIdRef = useRef<string | null>(selectedFileId ?? null);
 
   // 获取当前选中的文件信息
   const selectedFile = files.find(f => f.id === selectedFileId);
@@ -80,11 +85,113 @@ function App() {
     });
   }, [currentMessages, searchQuery]);
 
-  // 更新搜索结果到 store
+  // 更新搜索结果到 store（按出现次数展开）
   useEffect(() => {
-    const results = filteredMessages.map(m => m.id);
-    setSearchResults(results);
-  }, [filteredMessages, setSearchResults]);
+    const trimmedQuery = searchQuery.trim();
+    const queryChanged = lastSearchQueryRef.current !== searchQuery;
+    const currentFileId = selectedFileId ?? null;
+    const fileChanged = lastFileIdRef.current !== currentFileId;
+
+    if (queryChanged) {
+      lastSearchQueryRef.current = searchQuery;
+    }
+    if (fileChanged) {
+      lastFileIdRef.current = currentFileId;
+    }
+
+    if (!trimmedQuery) {
+      setSearchResults([], { resetIndex: true });
+      return;
+    }
+
+    const results: SearchResultEntry[] = [];
+    const regex = new RegExp(`(${escapeRegex(trimmedQuery)})`, 'gi');
+
+    const stripCodeFromMarkdown = (md: string): string => {
+      if (!md) return md;
+      // 去除围栏代码块与行内代码，避免计入未高亮部分
+      return md
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/`[^`]*`/g, '');
+    };
+
+    filteredMessages.forEach((m) => {
+      const segments: string[] = [];
+      const addSegmentIfAny = (text?: string, sanitizer?: (s: string) => string) => {
+        if (!text) return;
+        const sanitized = sanitizer ? sanitizer(text) : text;
+        const trimmed = sanitized.trim();
+        if (trimmed) {
+          segments.push(trimmed);
+        }
+      };
+
+      if (m.markdownSegments && m.markdownSegments.length > 0) {
+        addSegmentIfAny(m.markdownSegments.join('\n\n'), stripCodeFromMarkdown);
+      } else if (typeof m.textContent === 'string') {
+        addSegmentIfAny(m.textContent);
+      }
+
+      // 注意：thinkingContent 已经包含在 markdownSegments 中了（见 parser.ts:151）
+      // 所以不应该重复添加，否则会导致重复计数
+
+      m.toolCalls?.forEach((tool) => {
+        addSegmentIfAny(tool.result);
+      });
+
+      let occurrenceIdx = 0;
+      segments.forEach((text) => {
+        const matches = [...text.matchAll(regex)];
+        matches.forEach(() => {
+          results.push({
+            id: `${m.id}-${results.length}`,
+            messageId: m.id,
+            occurrenceIndex: occurrenceIdx++,
+          });
+        });
+      });
+    });
+
+    setSearchResults(results, { resetIndex: queryChanged || fileChanged });
+  }, [filteredMessages, searchQuery, selectedFileId, setSearchResults, setActiveSearchResult]);
+
+  // 搜索跳转：滚动定位到当前选中的消息卡片
+  useEffect(() => {
+    if (!activeSearchResult) return;
+
+    const { messageId, occurrenceIndex } = activeSearchResult;
+    const escapedId =
+      typeof CSS !== 'undefined' && CSS.escape
+        ? CSS.escape(messageId)
+        : messageId.replace(/"/g, '\\"');
+    const target = document.querySelector<HTMLElement>(
+      `[data-message-id="${escapedId}"]`
+    );
+    if (!target) return;
+
+    target.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+
+    const highlightMarks = Array.from(target.querySelectorAll<HTMLElement>('mark'));
+    const highlightTarget =
+      highlightMarks[occurrenceIndex] ?? highlightMarks[0] ?? target;
+
+    highlightTarget.classList.remove('search-flash');
+    // 触发重绘以便重复添加动画
+    void highlightTarget.offsetWidth;
+    highlightTarget.classList.add('search-flash');
+
+    const timer = window.setTimeout(() => {
+      highlightTarget.classList.remove('search-flash');
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timer);
+      highlightTarget.classList.remove('search-flash');
+    };
+  }, [activeSearchResult, filteredMessages]);
 
   // 当切换到另外一个文件时，重置卡片展开状态，避免上一个文件的展开/折叠状态污染新文件的展示
   useEffect(() => {

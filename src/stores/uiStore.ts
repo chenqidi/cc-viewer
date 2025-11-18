@@ -1,18 +1,23 @@
 import { create } from 'zustand';
 
+export interface SearchResultEntry {
+  id: string;
+  messageId: string;
+  occurrenceIndex: number;
+}
+
 interface UiStore {
   // 折叠状态，key 为 cardId，value 为当前展开状态
   expandedCards: Record<string, boolean>;
 
   // 消息搜索
   searchQuery: string;
-  searchResults: string[]; // message IDs
+  searchResults: SearchResultEntry[];
+  activeSearchResultIndex: number;
+  activeSearchResult: SearchResultEntry | null;
 
   // 文件搜索
   fileSearchQuery: string;
-
-  // 选中的消息
-  selectedMessageId: string | null;
 
   // 统计面板展开状态
   isStatsPanelExpanded: boolean;
@@ -24,11 +29,12 @@ interface UiStore {
   collapseCards: (messageIds: string[]) => void;
   collapseAll: () => void;
   setSearchQuery: (query: string) => void;
-  setSearchResults: (results: string[]) => void;
+  setSearchResults: (results: SearchResultEntry[], options?: { resetIndex?: boolean }) => void;
   clearSearch: () => void;
   setFileSearchQuery: (query: string) => void;
   clearFileSearch: () => void;
-  selectMessage: (messageId: string) => void;
+  setActiveSearchResult: (result: SearchResultEntry | null) => void;
+  setActiveSearchResultIndex: (index: number) => void;
   toggleStatsPanel: () => void;
 }
 
@@ -36,8 +42,9 @@ export const useUiStore = create<UiStore>((set) => ({
   expandedCards: {},
   searchQuery: '',
   searchResults: [],
+  activeSearchResultIndex: -1,
+  activeSearchResult: null,
   fileSearchQuery: '',
-  selectedMessageId: null,
   isStatsPanelExpanded: false,
 
   registerCard: (cardId: string, defaultExpanded: boolean) => {
@@ -100,12 +107,39 @@ export const useUiStore = create<UiStore>((set) => ({
     set({ searchQuery: query });
   },
 
-  setSearchResults: (results: string[]) => {
-    set({ searchResults: results });
+  setSearchResults: (results: SearchResultEntry[], options) => {
+    set((state) => {
+      let nextIndex = state.activeSearchResultIndex;
+      if (results.length === 0) {
+        nextIndex = -1;
+      } else if (options?.resetIndex) {
+        nextIndex = 0;
+      } else if (nextIndex === -1 || nextIndex >= results.length) {
+        nextIndex = 0;
+      }
+
+      const nextActive =
+        results.length === 0
+          ? null
+          : options?.resetIndex || nextIndex === -1
+            ? results[0]
+            : state.activeSearchResult;
+
+      return {
+        searchResults: results,
+        activeSearchResultIndex: nextIndex,
+        activeSearchResult: nextActive,
+      };
+    });
   },
 
   clearSearch: () => {
-    set({ searchQuery: '', searchResults: [] });
+    set({
+      searchQuery: '',
+      searchResults: [],
+      activeSearchResultIndex: -1,
+      activeSearchResult: null,
+    });
   },
 
   setFileSearchQuery: (query: string) => {
@@ -116,8 +150,19 @@ export const useUiStore = create<UiStore>((set) => ({
     set({ fileSearchQuery: '' });
   },
 
-  selectMessage: (messageId: string) => {
-    set({ selectedMessageId: messageId });
+  setActiveSearchResult: (result: SearchResultEntry | null) => {
+    set({ activeSearchResult: result });
+  },
+
+  setActiveSearchResultIndex: (index: number) => {
+    set((state) => {
+      if (index < 0 || state.searchResults.length === 0) {
+        return { activeSearchResultIndex: -1 };
+      }
+
+      const clamped = Math.min(index, state.searchResults.length - 1);
+      return { activeSearchResultIndex: clamped };
+    });
   },
 
   toggleStatsPanel: () => {

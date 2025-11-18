@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { Input } from './ui/input';
 import { useUiStore } from '../stores/uiStore';
 
 export function SearchBar() {
-  const { searchQuery, searchResults, setSearchQuery, clearSearch } = useUiStore();
+  const {
+    searchQuery,
+    searchResults,
+    activeSearchResultIndex,
+    setSearchQuery,
+    clearSearch,
+    setActiveSearchResult,
+    setActiveSearchResultIndex,
+  } = useUiStore();
   const [inputValue, setInputValue] = useState(searchQuery);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,6 +64,50 @@ export function SearchBar() {
     }
   };
 
+  const hasSearchQuery = Boolean(searchQuery.trim());
+  const totalResults = searchResults.length;
+  const hasResults = hasSearchQuery && totalResults > 0;
+  const currentResultDisplay =
+    hasResults && activeSearchResultIndex >= 0 ? activeSearchResultIndex + 1 : 0;
+
+  const goToNextResult = () => {
+    if (!hasResults) return;
+    const nextIndex =
+      activeSearchResultIndex === -1
+        ? 0
+        : (activeSearchResultIndex + 1) % totalResults;
+    setActiveSearchResultIndex(nextIndex);
+  };
+
+  const goToPreviousResult = () => {
+    if (!hasResults) return;
+    if (activeSearchResultIndex === -1) {
+      setActiveSearchResultIndex(totalResults - 1);
+      return;
+    }
+    const nextIndex =
+      (activeSearchResultIndex - 1 + totalResults) % totalResults;
+    setActiveSearchResultIndex(nextIndex);
+  };
+
+  useEffect(() => {
+    if (!hasSearchQuery || !hasResults || activeSearchResultIndex === -1) {
+      setActiveSearchResult(null);
+      return;
+    }
+
+    const targetResult = searchResults[activeSearchResultIndex];
+    if (targetResult) {
+      setActiveSearchResult(targetResult);
+    }
+  }, [
+    hasResults,
+    hasSearchQuery,
+    activeSearchResultIndex,
+    searchResults,
+    setActiveSearchResult,
+  ]);
+
   return (
     <div className="flex items-center gap-2">
       {/* 搜索输入框 */}
@@ -81,10 +133,40 @@ export function SearchBar() {
         )}
       </div>
 
-      {/* 搜索结果计数 */}
-      {searchQuery && searchResults.length > 0 && (
-        <div className="text-xs text-text-secondary whitespace-nowrap">
-          <span className="font-semibold text-accent-cyan">{searchResults.length}</span> 条匹配
+      {/* 搜索结果计数与跳转 */}
+      {hasSearchQuery && (
+        <div className="flex items-center gap-2 text-xs text-text-secondary whitespace-nowrap">
+          {hasResults ? (
+            <span className="flex items-center gap-1">
+              <span className="font-semibold text-accent-cyan">
+                {currentResultDisplay}
+              </span>
+              <span>/</span>
+              <span>{totalResults}</span>
+            </span>
+          ) : (
+            <span>0 条匹配</span>
+          )}
+          <div className="flex flex-col border border-border-subtle rounded-md overflow-hidden h-10">
+            <button
+              type="button"
+              onClick={goToPreviousResult}
+              disabled={!hasResults}
+              className="flex-1 flex items-center justify-center hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed border-b border-border-subtle/60 last:border-b-0"
+              title="跳转到上一个匹配"
+            >
+              <ChevronUp className="w-4 h-4 text-accent-cyan" />
+            </button>
+            <button
+              type="button"
+              onClick={goToNextResult}
+              disabled={!hasResults}
+              className="flex-1 flex items-center justify-center hover:bg-surface-muted disabled:opacity-40 disabled:cursor-not-allowed"
+              title="跳转到下一个匹配"
+            >
+              <ChevronDown className="w-4 h-4 text-accent-cyan" />
+            </button>
+          </div>
         </div>
       )}
     </div>

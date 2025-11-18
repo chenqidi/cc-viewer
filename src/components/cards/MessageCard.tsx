@@ -184,7 +184,7 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
     message.type === 'assistant' && isThinkingOnly ? false : true;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-message-id={message.id}>
       <UnifiedCard
         type={cardType}
         messageId={message.id}

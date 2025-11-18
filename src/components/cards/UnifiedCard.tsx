@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { cn, highlightText, formatTimestamp } from '../../lib/utils';
@@ -251,6 +251,31 @@ export function UnifiedCard({
 
     // Markdown 渲染
     if (renderAsMarkdown && markdownProcessingResult) {
+      const highlightMarkdownChildren = (nodeChildren: ReactNode): ReactNode => {
+        if (!searchQuery) {
+          return nodeChildren;
+        }
+
+        return Children.map(nodeChildren, (child, index) => {
+          if (typeof child === 'string') {
+            const highlighted = highlightText(child, searchQuery);
+            return (
+              <span
+                key={index}
+                dangerouslySetInnerHTML={{ __html: highlighted }}
+              />
+            );
+          }
+
+          if (isValidElement(child) && child.props?.children) {
+            return cloneElement(child, {
+              children: highlightMarkdownChildren(child.props.children),
+            });
+          }
+          return child;
+        });
+      };
+
       const renderMarkdownBlock = (markdown: string, key?: number) => {
         const source = applyTruncate(markdown);
         return (
@@ -303,7 +328,7 @@ export function UnifiedCard({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {children}
+                    {highlightMarkdownChildren(children)}
                   </a>
                 );
               },
@@ -314,20 +339,19 @@ export function UnifiedCard({
                 return <ol className="list-decimal list-inside space-y-2 my-3">{children}</ol>;
               },
               p({ children }) {
-                if (searchQuery && typeof children === 'string') {
-                  const highlighted = highlightText(children, searchQuery);
-                  return <p className="my-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: highlighted }} />;
-                }
-                return <p className="my-2 leading-relaxed">{children}</p>;
+                return <p className="my-2 leading-relaxed">{highlightMarkdownChildren(children)}</p>;
+              },
+              li({ children }) {
+                return <li>{highlightMarkdownChildren(children)}</li>;
               },
               h1({ children }) {
-                return <h1 className="text-2xl font-bold mt-6 mb-3 text-text-primary">{children}</h1>;
+                return <h1 className="text-2xl font-bold mt-6 mb-3 text-text-primary">{highlightMarkdownChildren(children)}</h1>;
               },
               h2({ children }) {
-                return <h2 className="text-xl font-bold mt-5 mb-3 text-text-primary">{children}</h2>;
+                return <h2 className="text-xl font-bold mt-5 mb-3 text-text-primary">{highlightMarkdownChildren(children)}</h2>;
               },
               h3({ children }) {
-                return <h3 className="text-lg font-semibold mt-4 mb-2 text-text-primary">{children}</h3>;
+                return <h3 className="text-lg font-semibold mt-4 mb-2 text-text-primary">{highlightMarkdownChildren(children)}</h3>;
               },
             }}
           >
