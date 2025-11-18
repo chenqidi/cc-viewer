@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useCallback } from "react";
+import { useMemo, useEffect, useCallback, useState, useRef } from "react";
 import { Button } from "./components/ui/button";
 import { Dialog } from "./components/ui/dialog";
 import { MainLayout } from "./components/layout/MainLayout";
@@ -26,6 +26,10 @@ function App() {
     isStatsPanelExpanded,
     toggleStatsPanel,
   } = useUiStore();
+
+  // 自动刷新状态
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const autoRefreshTimerRef = useRef<number | null>(null);
 
   // 获取当前选中的文件信息
   const selectedFile = files.find(f => f.id === selectedFileId);
@@ -150,6 +154,35 @@ function App() {
     void refreshFile(selectedFileId);
   }, [refreshFile, selectedFileId, isMessageLoading]);
 
+  // 自动刷新定时器
+  useEffect(() => {
+    // 清除旧的定时器
+    if (autoRefreshTimerRef.current) {
+      clearInterval(autoRefreshTimerRef.current);
+      autoRefreshTimerRef.current = null;
+    }
+
+    // 如果开启自动刷新且有选中文件，设置定时器
+    if (autoRefresh && selectedFileId) {
+      autoRefreshTimerRef.current = window.setInterval(() => {
+        handleRefresh();
+      }, 10000); // 10秒
+    }
+
+    // 清理函数
+    return () => {
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+        autoRefreshTimerRef.current = null;
+      }
+    };
+  }, [autoRefresh, selectedFileId, handleRefresh]);
+
+  // 切换自动刷新状态
+  const toggleAutoRefresh = useCallback(() => {
+    setAutoRefresh(prev => !prev);
+  }, []);
+
   // 文件信息栏
   const fileInfo = selectedFile ? (
     <div className="flex justify-between items-center w-full gap-4">
@@ -179,7 +212,15 @@ function App() {
         >
           刷新
         </Button>
-        <Button variant="ghost" size="sm">导出</Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleAutoRefresh}
+          disabled={!selectedFileId}
+          className={autoRefresh ? 'text-accent-cyan' : ''}
+        >
+          自动刷新
+        </Button>
       </div>
     </div>
   ) : null;
