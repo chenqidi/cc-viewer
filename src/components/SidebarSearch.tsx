@@ -87,7 +87,7 @@ export function SidebarSearch() {
   return (
     <div className="flex-shrink-0 h-16 px-4 flex items-center justify-between gap-2">
       <h1 className="text-lg font-semibold text-accent-cyan">
-        CC Viewer
+        cc-viewer
       </h1>
       <div className="flex items-center gap-1">
         <button
