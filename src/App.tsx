@@ -15,7 +15,13 @@ import { calculateStats } from "./lib/stats";
 import { useKeyboard } from "./hooks/useKeyboard";
 
 function App() {
-  const { selectedFileId, currentMessages, files, refreshFile, isMessageLoading } = useFileStore();
+  const {
+    selectedFileId,
+    currentMessages,
+    files,
+    refreshFile,
+    isMessageLoading,
+  } = useFileStore();
   const {
     searchQuery,
     setSearchResults,

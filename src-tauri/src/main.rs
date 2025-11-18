@@ -3,7 +3,7 @@
 
 mod commands;
 
-use commands::{list_jsonl_files, read_file_content, get_default_claude_dir};
+use commands::{list_jsonl_files, read_file_content, get_default_claude_dir, select_project_root};
 
 fn main() {
     tauri::Builder::default()
@@ -12,6 +12,7 @@ fn main() {
             list_jsonl_files,
             read_file_content,
             get_default_claude_dir,
+            select_project_root,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

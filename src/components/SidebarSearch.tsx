@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, X, RefreshCw } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
+import { Search, X, RefreshCw, FolderSearch } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
 import { useFileStore } from '../stores/fileStore';
 
@@ -7,6 +8,7 @@ export function SidebarSearch() {
   const { fileSearchQuery, setFileSearchQuery, clearFileSearch } = useUiStore();
   const { currentDirectory, loadFiles, isFileListLoading } = useFileStore();
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isSelectingDirectory, setIsSelectingDirectory] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 切换到搜索模式时自动聚焦
@@ -53,6 +55,23 @@ export function SidebarSearch() {
     inputRef.current?.focus();
   };
 
+  const handleSelectDirectory = async () => {
+    setIsSelectingDirectory(true);
+    try {
+      const directory = await invoke<string | null>('select_project_root', {
+        defaultPath: currentDirectory ?? undefined,
+      });
+
+      if (directory) {
+        await loadFiles(directory);
+      }
+    } catch (error) {
+      console.error('Failed to select directory:', error);
+    } finally {
+      setIsSelectingDirectory(false);
+    }
+  };
+
   // 搜索模式
   if (isSearchMode) {
     return (
@@ -90,6 +109,14 @@ export function SidebarSearch() {
         cc-viewer
       </h1>
       <div className="flex items-center gap-1">
+        <button
+          onClick={handleSelectDirectory}
+          className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted rounded-brutal transition-colors disabled:opacity-50"
+          title="选择 Claude 根目录"
+          disabled={isSelectingDirectory || isFileListLoading}
+        >
+          <FolderSearch className="w-4 h-4" />
+        </button>
         <button
           onClick={async () => {
             if (!currentDirectory || isFileListLoading) return;

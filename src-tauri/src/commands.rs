@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -18,6 +18,7 @@ pub struct ProjectInfo {
     pub cwd: String,               // 完整的 cwd 路径
     pub files: Vec<FileInfo>,      // 该项目下的所有文件
     pub last_modified: u64,        // 最后修改时间
+    pub is_root_level: bool,       // 是否源自用户选择的根目录
 }
 
 /// 列出所有项目及其文件（按项目分组）
@@ -43,10 +44,15 @@ pub fn list_jsonl_files(directory: String) -> Result<Vec<ProjectInfo>, String> {
         // 只处理目录
         if path.is_dir() {
             // 扫描这个项目目录
-            if let Ok(project_info) = scan_project_directory(&path) {
+            if let Ok(project_info) = scan_project_directory(&path, false) {
                 projects.push(project_info);
             }
         }
+    }
+
+    // 兼容直接将项目目录作为根目录的情况（根目录内直接是 jsonl 文件）
+    if let Ok(root_project) = scan_project_directory(&dir, true) {
+        projects.push(root_project);
     }
 
     // 按最后修改时间降序排序
@@ -56,7 +62,7 @@ pub fn list_jsonl_files(directory: String) -> Result<Vec<ProjectInfo>, String> {
 }
 
 /// 扫描一个项目目录，获取项目信息
-fn scan_project_directory(project_dir: &PathBuf) -> Result<ProjectInfo, String> {
+fn scan_project_directory(project_dir: &Path, is_root_level: bool) -> Result<ProjectInfo, String> {
     let mut files = Vec::new();
     let mut last_modified = 0u64;
     let mut cwd = String::new();
@@ -138,6 +144,7 @@ fn scan_project_directory(project_dir: &PathBuf) -> Result<ProjectInfo, String> 
         cwd,
         files,
         last_modified,
+        is_root_level,
     })
 }
 
@@ -194,4 +201,20 @@ pub fn get_default_claude_dir() -> Result<String, String> {
     }
 
     Ok(claude_dir.to_string_lossy().to_string())
+}
+
+/// 选择 Claude 项目的根目录
+#[tauri::command]
+pub fn select_project_root(default_path: Option<String>) -> Result<Option<String>, String> {
+    let mut dialog = rfd::FileDialog::new();
+
+    if let Some(path) = default_path {
+        dialog = dialog.set_directory(path);
+    } else if let Ok(default_dir) = get_default_claude_dir() {
+        dialog = dialog.set_directory(default_dir);
+    }
+
+    Ok(dialog
+        .pick_folder()
+        .map(|path| path.to_string_lossy().to_string()))
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionFile } from '../types/app';
 import { formatDateTime } from '../lib/utils';
 import { LoadingSpinner } from './ui/loading';
@@ -45,6 +45,9 @@ interface ProjectGroupProps {
   selectedFileId: string | null;
   isLoading: boolean;
   onSelectFile: (fileId: string) => void;
+  indentOffset?: number;
+  fileIndentOffset?: number;
+  hideHeader?: boolean;
 }
 
 export function ProjectGroup({
@@ -55,43 +58,61 @@ export function ProjectGroup({
   selectedFileId,
   isLoading,
   onSelectFile,
+  indentOffset = 0,
+  fileIndentOffset = 22,
+  hideHeader = false,
 }: ProjectGroupProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(hideHeader);
+
+  useEffect(() => {
+    if (hideHeader) {
+      setIsExpanded(true);
+    }
+  }, [hideHeader]);
 
   // 计算项目统计信息
   const fileCount = files.length;
+  const projectButtonStyle = indentOffset > 0
+    ? {
+        marginLeft: `-${indentOffset}px`,
+        paddingLeft: `${indentOffset}px`,
+      }
+    : undefined;
 
   return (
     <div className="mb-[6px]">
       {/* 项目头部 - 简洁模式 */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={`
-          w-full px-4 py-1.5 text-left transition-colors
-          ${isExpanded ? 'bg-background-header' : 'hover:bg-background-header'}
-        `}
-      >
-        {/* 项目名 + 折叠图标 + 日期信息（时间与项目名左对齐） */}
-        <div className="flex items-start gap-2">
-          <span className="text-text-secondary flex-shrink-0 h-5 flex items-center">
-            {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-          </span>
-          <div className="flex-1 min-w-0">
-            <div
-              className="font-bold text-sm truncate text-text-primary"
-              title={projectCwd}
-            >
-              {projectName} [{fileCount}]
-            </div>
-            <div className="text-xs text-text-secondary mt-0.5">
-              {formatDateTime(lastModified)}
+      {!hideHeader && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`
+            w-full px-0 pr-4 py-1.5 text-left transition-colors
+            ${isExpanded ? 'bg-background-header' : 'hover:bg-background-header'}
+          `}
+          style={projectButtonStyle}
+        >
+          {/* 项目名 + 折叠图标 + 日期信息（时间与项目名左对齐） */}
+          <div className="flex items-start gap-2">
+            <span className="text-text-secondary flex-shrink-0 h-5 flex items-center">
+              {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div
+                className="font-bold text-sm truncate text-text-primary"
+                title={projectCwd}
+              >
+                {projectName} [{fileCount}]
+              </div>
+              <div className="text-xs text-text-secondary mt-0.5">
+                {formatDateTime(lastModified)}
+              </div>
             </div>
           </div>
-        </div>
-      </button>
+        </button>
+      )}
 
       {/* 文件列表 */}
-      {isExpanded && (
+      {(isExpanded || hideHeader) && (
         <div>
           {files.map((file) => (
             <FileItem
@@ -100,6 +121,8 @@ export function ProjectGroup({
               isSelected={file.id === selectedFileId}
               isLoading={isLoading && file.id === selectedFileId}
               onClick={() => onSelectFile(file.id)}
+              indentOffset={indentOffset}
+              fileIndentOffset={fileIndentOffset}
             />
           ))}
         </div>
@@ -113,19 +136,28 @@ interface FileItemProps {
   isSelected: boolean;
   isLoading: boolean;
   onClick: () => void;
+  indentOffset: number;
+  fileIndentOffset: number;
 }
 
-function FileItem({ file, isSelected, isLoading, onClick }: FileItemProps) {
+function FileItem({ file, isSelected, isLoading, onClick, indentOffset, fileIndentOffset }: FileItemProps) {
+  const totalIndent = indentOffset + fileIndentOffset;
+  const fileButtonStyle = {
+    marginLeft: indentOffset > 0 ? `-${indentOffset}px` : undefined,
+    paddingLeft: totalIndent > 0 ? `${totalIndent}px` : undefined,
+  };
+
   return (
     <button
       onClick={onClick}
       disabled={isLoading}
       className={`
-        group w-full pl-9 pr-4 py-1.5 text-left transition-colors
+        group w-full pr-4 py-1.5 text-left transition-colors
         flex items-start justify-between gap-2
         ${isSelected ? 'bg-surface-muted' : ''}
         ${isLoading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}
       `}
+      style={fileButtonStyle}
     >
       <div className="flex-1 min-w-0">
         {/* 文件名 */}

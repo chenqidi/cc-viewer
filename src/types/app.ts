@@ -82,6 +82,7 @@ export interface ProjectInfo {
   cwd: string;            // 完整的 cwd 路径
   files: FileInfo[];      // 该项目下的所有文件
   last_modified: number;  // 最后修改时间
+  is_root_level: boolean; // 是否直接对应当前根目录
 }
 
 // ============= 项目分组 =============
