@@ -96,18 +96,9 @@
     @apply bg-theme-system rounded-glass px-3 py-2 -mx-1;
   }
 
-  /* 按钮样式 - 玻璃态风格 */
-  .btn-glass {
-    @apply px-4 py-2 rounded-glass;
-    @apply bg-glass-card backdrop-blur-glass border border-border;
-    @apply text-text-primary;
-    @apply hover:bg-opacity-80 hover:border-border-hover;
-    @apply transition-all duration-200;
-  }
-
   /* 工具结果区域 */
   .tool-result {
-    @apply bg-black/40 backdrop-blur-sm border-l-4 border-accent-cyan p-3 my-2 rounded-glass;
+    @apply bg-black/40 border-l-4 border-accent-cyan p-3 my-2 rounded-glass;
   }
 
   /* 卡片内容区域 */
@@ -132,7 +123,7 @@
 
   /* 代码块背景 - 玻璃态 */
   .code-glass {
-    @apply bg-surface-muted backdrop-blur-sm border border-border rounded-glass;
+    @apply bg-surface-muted border border-border rounded-glass;
     color: var(--color-code-block-foreground);
   }
 

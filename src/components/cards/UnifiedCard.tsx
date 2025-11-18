@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { cn, highlightText, formatTimestamp } from '../../lib/utils';
@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm';
 import { CodeBlock } from '../CodeBlock';
 import type { TokenUsage } from '../../types/app';
 import { CollapseToggle } from './CollapseToggle';
+import { isValidMarkdown, repairMarkdown } from '../../lib/markdown';
 
 type CardType = 'user' | 'assistant' | 'system' | 'thinking' | 'tool';
 
@@ -62,6 +63,18 @@ interface UnifiedCardProps {
   renderAsMarkdown?: boolean;
 }
 
+type MarkdownProcessingResult =
+  | {
+      mode: 'markdown';
+      segments: string[];
+      sourceType: 'string' | 'array';
+    }
+  | {
+      mode: 'plain';
+      segments: string[];
+      sourceType: 'string' | 'array';
+    };
+
 export function UnifiedCard({
   type,
   messageId,
@@ -94,6 +107,58 @@ export function UnifiedCard({
   const contentContainerRef = useRef<HTMLDivElement | null>(null);
   const [isContentCollapsed, setIsContentCollapsed] = useState(true);
   const [isContentOverflowing, setIsContentOverflowing] = useState(false);
+  const markdownProcessingResult = useMemo<MarkdownProcessingResult | null>(() => {
+    if (!renderAsMarkdown) {
+      return null;
+    }
+
+    const processSegments = (
+      segments: string[],
+      sourceType: 'array' | 'string'
+    ): MarkdownProcessingResult => {
+      const processedSegments: string[] = [];
+
+      for (const segment of segments) {
+        if (!segment.trim()) {
+          processedSegments.push(segment);
+          continue;
+        }
+
+        if (isValidMarkdown(segment)) {
+          processedSegments.push(segment);
+          continue;
+        }
+
+        const fixed = repairMarkdown(segment);
+        if (fixed) {
+          processedSegments.push(fixed);
+          continue;
+        }
+
+        return {
+          mode: 'plain',
+          segments,
+          sourceType,
+        };
+      }
+
+      return {
+        mode: 'markdown',
+        segments: processedSegments,
+        sourceType,
+      };
+    };
+
+    if (isStringArrayContent) {
+      return processSegments(content as string[], 'array');
+    }
+
+    if (isStringContent) {
+      return processSegments([content as string], 'string');
+    }
+
+    return null;
+  }, [content, isStringArrayContent, isStringContent, renderAsMarkdown]);
 
   useEffect(() => {
     if (!shouldClampContent) {
@@ -150,13 +215,42 @@ export function UnifiedCard({
       return text.slice(0, index);
     };
 
+    const renderPlainTextSegments = (segments: string[], sourceType: 'array' | 'string') => {
+      if (sourceType === 'array') {
+        const joined = segments.join('\n\n');
+        const baseText = applyTruncate(joined);
+        const displayContent = searchQuery ? highlightText(baseText, searchQuery) : baseText;
+        return (
+          <div
+            className="text-text-primary whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: displayContent }}
+          />
+        );
+      }
+
+      const text = segments[0] ?? '';
+      const baseText = applyTruncate(text);
+      const displayContent = searchQuery ? highlightText(baseText, searchQuery) : baseText;
+
+      if (searchQuery) {
+        return (
+          <div
+            className="text-text-primary whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: displayContent }}
+          />
+        );
+      }
+
+      return <div className="text-text-primary whitespace-pre-wrap">{text}</div>;
+    };
+
     // ReactNode 直接渲染
     if (!isStringContent && !isStringArrayContent) {
       return content;
     }
 
     // Markdown 渲染
-    if (renderAsMarkdown) {
+    if (renderAsMarkdown && markdownProcessingResult) {
       const renderMarkdownBlock = (markdown: string, key?: number) => {
         const source = applyTruncate(markdown);
         return (
@@ -243,50 +337,37 @@ export function UnifiedCard({
         );
       };
 
-      // 若传入的是字符串数组，则每段单独渲染一个 div（满足“content 里面 N 个 div”的需求）
-      if (isStringArrayContent) {
+      if (markdownProcessingResult.mode === 'markdown') {
+        const isArraySource = markdownProcessingResult.sourceType === 'array';
+        if (isArraySource) {
+          return (
+            <div className="text-text-primary prose-sm prose-invert max-w-none space-y-4">
+              {markdownProcessingResult.segments.map((item, index) =>
+                renderMarkdownBlock(item, index)
+              )}
+            </div>
+          );
+        }
+
         return (
-          <div className="text-text-primary prose-sm prose-invert max-w-none space-y-4">
-            {(content as string[]).map((item, index) => renderMarkdownBlock(item, index))}
+          <div className="text-text-primary prose-sm prose-invert max-w-none">
+            {renderMarkdownBlock(markdownProcessingResult.segments[0] ?? '')}
           </div>
         );
       }
 
-      // 普通字符串 Markdown 渲染
-      return (
-        <div className="text-text-primary prose-sm prose-invert max-w-none">
-          {renderMarkdownBlock(content as string)}
-        </div>
+      return renderPlainTextSegments(
+        markdownProcessingResult.segments,
+        markdownProcessingResult.sourceType
       );
     }
 
     // 纯文本渲染
-    // 字符串数组：非 Markdown 模式下简单拼接展示（主要用于调试场景）
     if (!isStringContent && isStringArrayContent) {
-      const joined = (content as string[]).join('\n\n');
-      const baseText = applyTruncate(joined);
-      const displayContent = searchQuery ? highlightText(baseText, searchQuery) : baseText;
-      return (
-        <div
-          className="text-text-primary whitespace-pre-wrap"
-          dangerouslySetInnerHTML={{ __html: displayContent }}
-        />
-      );
+      return renderPlainTextSegments(content as string[], 'array');
     }
 
-    const baseText = applyTruncate(content as string);
-    const displayContent = searchQuery ? highlightText(baseText, searchQuery) : baseText;
-
-    if (searchQuery) {
-      return (
-        <div
-          className="text-text-primary whitespace-pre-wrap"
-          dangerouslySetInnerHTML={{ __html: displayContent }}
-        />
-      );
-    }
-
-    return <div className="text-text-primary whitespace-pre-wrap">{content}</div>;
+    return renderPlainTextSegments([content as string], 'string');
   };
 
   const thinkingRawText = isThinkingCard
