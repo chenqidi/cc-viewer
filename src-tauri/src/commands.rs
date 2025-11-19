@@ -73,12 +73,6 @@ fn scan_project_directory(project_dir: &Path, is_root_level: bool) -> Result<Pro
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("jsonl") {
-            // 过滤掉以 "agent-" 开头的文件
-            let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-            if file_name.starts_with("agent-") {
-                continue;
-            }
-
             let metadata = fs::metadata(&path).map_err(|e| e.to_string())?;
             let modified = metadata
                 .modified()
