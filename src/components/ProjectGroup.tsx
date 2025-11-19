@@ -76,6 +76,7 @@ export function ProjectGroup({
     ? {
         marginLeft: `-${indentOffset}px`,
         paddingLeft: `${indentOffset}px`,
+        width: `calc(100% + ${indentOffset}px)`,
       }
     : undefined;
 
@@ -145,6 +146,7 @@ function FileItem({ file, isSelected, isLoading, onClick, indentOffset, fileInde
   const fileButtonStyle = {
     marginLeft: indentOffset > 0 ? `-${indentOffset}px` : undefined,
     paddingLeft: totalIndent > 0 ? `${totalIndent}px` : undefined,
+    width: indentOffset > 0 ? `calc(100% + ${indentOffset}px)` : undefined,
   };
 
   return (
