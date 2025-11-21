@@ -23,6 +23,10 @@ export interface ParsedMessage {
   role: 'user' | 'assistant' | 'system';
   // 在当前会话中的顺序索引（从 0 开始）
   sessionIndex: number;
+  // 关联的 tool_result 行（如果有匹配到）
+  pairedToolResultIndex?: number;
+  // 顶部显示的页码标签，例如 "15><22" -> 渲染成 "<15><22>"
+  indexLabel?: string;
   timestamp: Date;
   parentId?: string;
   isSidechain: boolean;

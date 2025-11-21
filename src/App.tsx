@@ -261,11 +261,64 @@ function App() {
     enabled: currentMessages.length > 0,
   });
 
+  // 计算当前视口内的锚点（顶部可见的消息卡片）
+  const getTopVisibleMessageId = useCallback((): string | null => {
+    const cards = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-message-id]')
+    );
+    if (cards.length === 0) return null;
+
+    // 选取第一个仍在视口内的卡片；如果都在上方，则取最后一个
+    let fallback: string | null = null;
+    for (const el of cards) {
+      const rect = el.getBoundingClientRect();
+      if (!fallback) {
+        fallback = el.dataset.messageId ?? null;
+      }
+      if (rect.bottom < 0) {
+        // 完全在上方，继续找
+        continue;
+      }
+      return el.dataset.messageId ?? fallback;
+    }
+    return fallback;
+  }, []);
+
+  // 刷新后滚动回锚点
+  const scrollToMessageId = useCallback((messageId: string) => {
+    if (!messageId) return;
+    const escapedId =
+      typeof CSS !== 'undefined' && CSS.escape
+        ? CSS.escape(messageId)
+        : messageId.replace(/"/g, '\\"');
+
+    const tryScroll = (attempt = 0) => {
+      const el = document.querySelector<HTMLElement>(
+        `[data-message-id="${escapedId}"]`
+      );
+      if (el) {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' });
+        return;
+      }
+      if (attempt < 3) {
+        window.setTimeout(() => tryScroll(attempt + 1), 50);
+      }
+    };
+
+    window.requestAnimationFrame(() => tryScroll());
+  }, []);
+
   // 刷新当前文件，追加最新内容
   const handleRefresh = useCallback(() => {
     if (!selectedFileId || isMessageLoading) return;
-    void refreshFile(selectedFileId);
-  }, [refreshFile, selectedFileId, isMessageLoading]);
+    const anchorId = getTopVisibleMessageId();
+    void (async () => {
+      const mode = await refreshFile(selectedFileId);
+      if (mode === 'full' && anchorId) {
+        scrollToMessageId(anchorId);
+      }
+    })();
+  }, [refreshFile, selectedFileId, isMessageLoading, getTopVisibleMessageId, scrollToMessageId]);
 
   // 自动刷新定时器
   useEffect(() => {

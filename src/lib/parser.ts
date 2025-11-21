@@ -237,5 +237,96 @@ export function parseJsonlFile(content: string): ParsedMessage[] {
     transformToMessage(record, index)
   );
 
-  return messages;
+  // 将 tool_use 与后续的 tool_result 合并到同一卡片：
+  // - 根据 tool_use.id 建立索引
+  // - 匹配后把 result 写回对应 toolCall.result
+  // - 纯 tool_result 消息（没有其它文本）从展示列表中剔除
+  const toolCallMap = new Map<string, { message: ParsedMessage; call: ToolCall }>();
+
+  for (const msg of messages) {
+    if (!msg.toolCalls) continue;
+    for (const call of msg.toolCalls) {
+      if (!call.id) continue;
+      toolCallMap.set(call.id, { message: msg, call });
+    }
+  }
+
+  const hiddenIndexes = new Set<number>();
+
+  const formatToolResult = (content: unknown): string => {
+    if (content === null || content === undefined) return '';
+    if (typeof content === 'string') return content;
+    try {
+      return JSON.stringify(content, null, 2);
+    } catch {
+      return String(content);
+    }
+  };
+
+  messages.forEach((msg, idx) => {
+    const raw: any = msg.raw;
+    const contentArray = raw?.message?.content;
+
+    if (raw?.type !== 'user' || !Array.isArray(contentArray)) {
+      return;
+    }
+
+    const hasToolResult = contentArray.some(item => item?.type === 'tool_result');
+    if (!hasToolResult) {
+      return;
+    }
+
+    const hasNonToolResultContent = contentArray.some((item) => {
+      if (!item) return false;
+      if (item.type === 'tool_result') return false;
+      if (typeof item === 'string') return item.trim().length > 0;
+      if (item.type === 'text' && typeof item.text === 'string') {
+        return item.text.trim().length > 0;
+      }
+      return true;
+    });
+
+    let matchedToolResult = false;
+
+    for (const item of contentArray) {
+      if (!item || item.type !== 'tool_result' || typeof item.tool_use_id !== 'string') {
+        continue;
+      }
+
+      const match = toolCallMap.get(item.tool_use_id);
+      if (!match) {
+        continue;
+      }
+
+      const resultText = formatToolResult(item.content);
+      if (resultText) {
+        match.call.result = match.call.result
+          ? `${match.call.result}\n${resultText}`
+          : resultText;
+      }
+      const existingIndex = match.message.pairedToolResultIndex;
+      match.message.pairedToolResultIndex =
+        typeof existingIndex === 'number' && existingIndex < msg.sessionIndex
+          ? existingIndex
+          : msg.sessionIndex;
+      matchedToolResult = true;
+    }
+
+    if (matchedToolResult && !hasNonToolResultContent && hasToolResult) {
+      hiddenIndexes.add(idx);
+    }
+  });
+
+  const visibleMessages = messages.filter((_, idx) => !hiddenIndexes.has(idx));
+
+  visibleMessages.forEach((msg) => {
+    if (!msg.toolCalls || msg.toolCalls.length === 0) return;
+    const useIndex = msg.sessionIndex + 1;
+    const resultIndex = typeof msg.pairedToolResultIndex === 'number'
+      ? msg.pairedToolResultIndex + 1
+      : null;
+    msg.indexLabel = resultIndex ? `${useIndex}><${resultIndex}` : `${useIndex}`;
+  });
+
+  return visibleMessages;
 }

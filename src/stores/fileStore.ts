@@ -17,7 +17,7 @@ interface FileStore {
   // Actions
   loadFiles: (directory: string) => Promise<void>;
   selectFile: (fileId: string) => Promise<void>;
-  refreshFile: (fileId: string) => Promise<void>;
+  refreshFile: (fileId: string) => Promise<'full' | 'append' | null>;
   clearSelection: () => void;
 }
 
@@ -110,7 +110,7 @@ export const useFileStore = create<FileStore>((set, get) => ({
   refreshFile: async (fileId: string) => {
     const { files, currentMessages, selectedFileId } = get();
     const file = files.find(f => f.id === fileId);
-    if (!file) return;
+    if (!file) return null;
 
     // 刷新时保留当前内容，只追加增量
     set({ isMessageLoading: true, error: null });
@@ -126,10 +126,41 @@ export const useFileStore = create<FileStore>((set, get) => ({
       const hasSamePrefix = currentMessages.every(
         (msg, index) => messages[index]?.id === msg.id
       );
+
+      const detectToolMergeChange = (): boolean => {
+        for (let i = 0; i < currentMessages.length; i++) {
+          const prev = currentMessages[i];
+          const next = messages[i];
+          if (!next) return true;
+
+          // pairedToolResultIndex 或 indexLabel 变化意味着需要全量刷新
+          if (prev.pairedToolResultIndex !== next.pairedToolResultIndex) return true;
+          if (prev.indexLabel !== next.indexLabel) return true;
+
+          const prevCalls = prev.toolCalls || [];
+          const nextCalls = next.toolCalls || [];
+          if (prevCalls.length !== nextCalls.length) return true;
+
+          for (let j = 0; j < prevCalls.length; j++) {
+            const p = prevCalls[j];
+            const n = nextCalls[j];
+            // 以 id 优先匹配；若缺失 id，按顺序比对
+            if (p.id && n.id && p.id !== n.id) return true;
+            if (p.result !== n.result) return true;
+            if (p.name !== n.name) return true;
+          }
+        }
+        return false;
+      };
+
+      const hasToolMergeChange = detectToolMergeChange();
+
       const shouldAppend =
         selectedFileId === fileId &&
         hasSamePrefix &&
-        messages.length >= currentMessages.length;
+        messages.length >= currentMessages.length &&
+        !hasToolMergeChange;
+
       const appendedMessages = shouldAppend
         ? messages.slice(currentMessages.length)
         : messages;
@@ -154,8 +185,11 @@ export const useFileStore = create<FileStore>((set, get) => ({
         files: updatedFiles,
         isMessageLoading: false,
       });
+
+      return shouldAppend ? 'append' : 'full';
     } catch (error) {
       set({ error: String(error), isMessageLoading: false });
+      return null;
     }
   },
 

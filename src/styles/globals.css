@@ -38,6 +38,11 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-scrollbar-thumb-hover);
   }
+
+  /* 滚动条交汇处（右下角） */
+  ::-webkit-scrollbar-corner {
+    background: var(--color-scrollbar-track);
+  }
 }
 
 @layer components {

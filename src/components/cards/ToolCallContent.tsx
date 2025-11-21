@@ -124,7 +124,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
         <div className="mt-3">
           <div className="flex items-center justify-between mb-2">
             <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-surface-badge rounded-glass brutal-border">
-              结果
+              Result
             </span>
             <Button
               variant="ghost"
@@ -140,11 +140,11 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
           </div>
           {searchQuery ? (
             <pre
-              className="code-glass p-4 text-xs overflow-x-auto max-h-96 overflow-y-auto leading-relaxed"
+              className="code-glass p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto leading-relaxed"
               dangerouslySetInnerHTML={{ __html: displayResult || '' }}
             />
           ) : (
-            <pre className="code-glass p-4 text-xs overflow-x-auto max-h-96 overflow-y-auto leading-relaxed">
+            <pre className="code-glass p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
               {tool.result}
             </pre>
           )}

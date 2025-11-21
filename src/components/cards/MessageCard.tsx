@@ -43,7 +43,7 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
         <pre
           className={
             'px-3 py-2 text-xs text-text-primary whitespace-pre-wrap break-words transition-all ' +
-            (expanded ? 'max-h-[480px] overflow-y-auto' : 'max-h-24 overflow-hidden')
+            (expanded ? 'max-h-[320px] overflow-y-auto' : 'max-h-24 overflow-hidden')
           }
         >
           {displayText}
@@ -176,7 +176,8 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
   }
 
   // 头部显示形如："assistant" + 右侧 "12:12:34 <2>"
-  const indexText = `${messageIndex + 1}`;
+  const baseIndex = Number.isFinite(messageIndex) ? messageIndex : message.sessionIndex;
+  const indexText = message.indexLabel || `${baseIndex + 1}`;
   const label = labelBase;
 
   // assistant.thinking 卡片默认折叠（但后续会在 UnifiedCard 里改成“折叠时展示首行”）
