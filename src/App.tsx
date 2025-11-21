@@ -59,6 +59,16 @@ function App() {
     return null;
   }, [currentMessages, selectedFile]);
 
+  const displayFileName = useMemo(() => {
+    if (!selectedFile?.fileName) return '';
+    const trimmed = selectedFile.fileName.replace(/\.jsonl$/i, '');
+    const parts = trimmed.split('-');
+    if (parts.length >= 2) {
+      return `${parts[0]}-${parts[1]}`;
+    }
+    return trimmed;
+  }, [selectedFile]);
+
   // 计算当前消息的统计数据
   const stats = useMemo(() => {
     if (currentMessages.length === 0) return null;
@@ -368,7 +378,7 @@ function App() {
     <div className="flex justify-between items-center w-full gap-4">
       <div className="min-w-0 flex-1">
         <h2 className="text-lg font-bold text-text-primary truncate">
-          {selectedFile.fileName.split('-')[0]} ({currentMessages.length})
+          {displayFileName || selectedFile.fileName} ({currentMessages.length})
         </h2>
       </div>
       <div className="flex-shrink-0">
@@ -411,7 +421,7 @@ function App() {
       {sessionId && filteredMessages.length > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-glass border border-border bg-surface-badge px-3 py-2 text-sm text-text-primary shadow-glass">
           <div className="flex items-center gap-2 text-text-muted text-sm">
-            <span className="font-mono leading-none">{`session-id: ${sessionId}`}</span>
+            <span className="font-mono leading-none">{`sessionId: ${sessionId}`}</span>
           </div>
           <Button
             variant="ghost"
