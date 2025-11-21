@@ -27,6 +27,12 @@ export function formatFileSize(bytes: number): string {
 export function formatTimestamp(timestamp: Date | string): string {
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
 
+  // 缺失或非法时间：统一用占位 00:00:00，避免时区导致的 08:00:00 等偏移
+  const timeValue = date.getTime();
+  if (Number.isNaN(timeValue) || timeValue === 0) {
+    return '00:00:00';
+  }
+
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const seconds = date.getSeconds().toString().padStart(2, '0');

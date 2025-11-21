@@ -51,6 +51,20 @@ export function transformToMessage(record: JsonlRecord, index: number): ParsedMe
     raw: record,
   };
 
+  // summary 记录没有 message 字段，直接展示 summary 文本
+  if (record.type === 'summary') {
+    const summaryText = typeof anyRecord.summary === 'string'
+      ? anyRecord.summary
+      : JSON.stringify(anyRecord.summary ?? anyRecord, null, 2);
+
+    return {
+      ...baseMessage,
+      role: 'system',
+      textContent: summaryText,
+      markdownSegments: [summaryText],
+    } as ParsedMessage;
+  }
+
   // 没有 message 字段
   if (!hasMessageKey) {
     // 特例：file-history-snapshot 目前仅保留占位符，不展示具体内容
