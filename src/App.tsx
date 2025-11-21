@@ -14,6 +14,7 @@ import { useUiStore, type SearchResultEntry } from "./stores/uiStore";
 import { calculateStats } from "./lib/stats";
 import { escapeRegex } from "./lib/utils";
 import { useKeyboard } from "./hooks/useKeyboard";
+import { Copy } from "lucide-react";
 
 function App() {
   const {
@@ -44,6 +45,19 @@ function App() {
 
   // 获取当前选中的文件信息
   const selectedFile = files.find(f => f.id === selectedFileId);
+
+  const sessionId = useMemo(() => {
+    const isAgentFile =
+      selectedFile?.fileName?.toLowerCase().startsWith('agent-') ?? false;
+    if (!isAgentFile) return null;
+    for (const msg of currentMessages) {
+      const id = (msg.raw as any)?.sessionId;
+      if (typeof id === 'string' && id.trim()) {
+        return id.trim();
+      }
+    }
+    return null;
+  }, [currentMessages, selectedFile]);
 
   // 计算当前消息的统计数据
   const stats = useMemo(() => {
@@ -394,6 +408,22 @@ function App() {
   // 消息卡片 - 使用新的 MessageCard 组件
   const messages = currentMessages.length > 0 ? (
     <div className="space-y-6">
+      {sessionId && filteredMessages.length > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-glass border border-border bg-surface-badge px-3 py-2 text-sm text-text-primary shadow-glass">
+          <div className="flex items-center gap-2 text-text-muted text-sm">
+            <span className="font-mono leading-none">{`session-id: ${sessionId}`}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-white/5"
+            onClick={() => navigator.clipboard.writeText(sessionId)}
+            aria-label="复制 Session ID"
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
       {filteredMessages.length > 0 ? (
         filteredMessages.map((message) => (
           <MessageCard

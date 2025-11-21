@@ -53,6 +53,7 @@ export interface ToolCall {
   input: Record<string, unknown>;
   result?: string;
   status: 'success' | 'error';
+  agentId?: string;
 }
 
 // ============= 统计数据 =============

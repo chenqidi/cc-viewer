@@ -1,8 +1,9 @@
 import type { ParsedMessage } from '../../types/app';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { UnifiedCard } from './UnifiedCard';
 import { ToolCallContent } from './ToolCallContent';
 import { CollapseToggle } from './CollapseToggle';
+import { useFileStore } from '../../stores/fileStore';
 
 interface MessageCardProps {
   message: ParsedMessage;
@@ -12,6 +13,46 @@ interface MessageCardProps {
 
 interface ToolResultPreviewProps {
   text: string;
+}
+
+function extractAgentId(source: unknown): string | null {
+  if (!source || typeof source !== 'object') return null;
+
+  const stack: unknown[] = [source];
+  const seen = new WeakSet<object>();
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || typeof current !== 'object') continue;
+    if (seen.has(current as object)) continue;
+    seen.add(current as object);
+
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        stack.push(item);
+      }
+      continue;
+    }
+
+    for (const [key, value] of Object.entries(current as Record<string, unknown>)) {
+      if (key === 'agentId') {
+        const normalized =
+          typeof value === 'string'
+            ? value.trim()
+            : value !== null && value !== undefined
+              ? String(value)
+              : '';
+        if (normalized) {
+          return normalized;
+        }
+      }
+      if (value && typeof value === 'object') {
+        stack.push(value);
+      }
+    }
+  }
+
+  return null;
 }
 
 function ToolResultPreview({ text }: ToolResultPreviewProps) {
@@ -62,6 +103,30 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
 export function MessageCard({ message, messageIndex, searchQuery }: MessageCardProps) {
   const raw: any = message.raw || {};
   const baseTypeLabel: string = raw.type || message.type;
+  const { selectedFileId, files } = useFileStore();
+  const currentFile = useMemo(
+    () => files.find((f) => f.id === selectedFileId) || null,
+    [files, selectedFileId]
+  );
+  const isCurrentFileAgent = useMemo(() => {
+    if (!currentFile || !currentFile.fileName) return false;
+    return currentFile.fileName.toLowerCase().startsWith('agent-');
+  }, [currentFile]);
+  const agentIds = useMemo(() => {
+    const ids = new Set<string>();
+    const rawId = extractAgentId(raw);
+    if (rawId) ids.add(rawId);
+
+    message.toolCalls?.forEach((call) => {
+      const callId = (call as any).agentId;
+      if (typeof callId === 'string' && callId.trim()) {
+        ids.add(callId.trim());
+      }
+    });
+
+    return Array.from(ids);
+  }, [raw, message.toolCalls]);
+  const agentFileLabels = agentIds.map((id) => `agent-${id}.jsonl`);
 
   // 计算 labelBase：
   // - 默认是原始 JSON 的 type（user/assistant/system/summary/...）
@@ -184,6 +249,22 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
   const defaultExpanded =
     message.type === 'assistant' && isThinkingOnly ? false : true;
 
+  const agentBadge =
+    !isCurrentFileAgent && agentFileLabels.length > 0
+      ? (
+        <div className="flex flex-wrap gap-2">
+          {agentFileLabels.map((label) => (
+            <div
+              key={label}
+              className="inline-flex items-center gap-2 rounded-full border border-accent-pink/45 bg-accent-pink/18 px-3 py-1 text-xs font-semibold text-accent-pink shadow-[0_10px_24px_-12px_rgba(255,105,180,0.55)] backdrop-blur"
+            >
+              <span className="whitespace-nowrap">{label}</span>
+            </div>
+          ))}
+        </div>
+      )
+      : null;
+
   return (
     <div className="space-y-3" data-message-id={message.id}>
       <UnifiedCard
@@ -198,6 +279,7 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
         searchQuery={searchQuery}
         defaultExpanded={defaultExpanded}
         renderAsMarkdown={renderAsMarkdown}
+        appendContent={agentBadge || undefined}
       />
     </div>
   );

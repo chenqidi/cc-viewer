@@ -20,6 +20,39 @@ export function parseJsonl(content: string): JsonlRecord[] {
   return records;
 }
 
+const extractAgentId = (source: unknown): string | null => {
+  if (!source || typeof source !== 'object') return null;
+  const queue: unknown[] = [source];
+  const seen = new WeakSet<object>();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || typeof current !== 'object') continue;
+    if (seen.has(current as object)) continue;
+    seen.add(current as object);
+
+    if (Array.isArray(current)) {
+      queue.push(...current);
+      continue;
+    }
+
+    for (const [key, value] of Object.entries(current as Record<string, unknown>)) {
+      if (key === 'agentId') {
+        if (typeof value === 'string' && value.trim()) return value.trim();
+        if (value !== null && value !== undefined) {
+          const text = String(value).trim();
+          if (text) return text;
+        }
+      }
+      if (value && typeof value === 'object') {
+        queue.push(value);
+      }
+    }
+  }
+
+  return null;
+};
+
 /**
  * 转换 JSONL 记录为 ParsedMessage
  * 注意：每一条 JSON 记录都会对应一条 ParsedMessage（不再返回 null）
@@ -317,6 +350,10 @@ export function parseJsonlFile(content: string): ParsedMessage[] {
         match.call.result = match.call.result
           ? `${match.call.result}\n${resultText}`
           : resultText;
+      }
+      const agentId = extractAgentId(item) || extractAgentId(raw?.toolUseResult) || extractAgentId(raw);
+      if (agentId && !match.call.agentId) {
+        match.call.agentId = agentId;
       }
       const existingIndex = match.message.pairedToolResultIndex;
       match.message.pairedToolResultIndex =

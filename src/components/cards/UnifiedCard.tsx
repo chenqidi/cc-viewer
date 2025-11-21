@@ -52,6 +52,8 @@ interface UnifiedCardProps {
   timestamp: Date;
   // 支持字符串、字符串数组（多段 Markdown）以及自定义 ReactNode
   content: string | string[] | ReactNode;
+  // 追加展示在内容区末尾的小块信息（如 agent 标识）
+  appendContent?: ReactNode;
   // 头部展示的类型标签：优先使用原始 JSON 的 type / 派生信息
   label?: string;
   // 点击复制按钮时复制的内容（若不传则不提供复制按钮）
@@ -80,6 +82,7 @@ export function UnifiedCard({
   messageId,
   timestamp,
   content,
+  appendContent,
   label,
   copyText,
   searchQuery,
@@ -494,6 +497,11 @@ export function UnifiedCard({
               onClick={() => toggleCard(cardId)}
             />
           )}
+          {appendContent && (
+            <div className="pt-1">
+              {appendContent}
+            </div>
+          )}
         </CardContent>
       ) : (
         isExpanded && (
@@ -520,6 +528,11 @@ export function UnifiedCard({
               >
                 {isContentCollapsed ? '展开全部' : '收起'}
               </button>
+            )}
+            {appendContent && (
+              <div className="mt-3">
+                {appendContent}
+              </div>
             )}
           </CardContent>
         )
