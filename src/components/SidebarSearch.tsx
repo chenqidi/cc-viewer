@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Search, X, RefreshCw, FolderSearch } from 'lucide-react';
+import { Search, X, FolderSearch } from 'lucide-react';
 import { useUiStore } from '../stores/uiStore';
 import { useFileStore } from '../stores/fileStore';
 
@@ -116,17 +116,6 @@ export function SidebarSearch() {
           disabled={isSelectingDirectory || isFileListLoading}
         >
           <FolderSearch className="w-4 h-4" />
-        </button>
-        <button
-          onClick={async () => {
-            if (!currentDirectory || isFileListLoading) return;
-            await loadFiles(currentDirectory);
-          }}
-          className="p-2 text-text-secondary hover:text-text-primary hover:bg-surface-muted rounded-brutal transition-colors disabled:opacity-50"
-          title="刷新文件列表"
-          disabled={!currentDirectory || isFileListLoading}
-        >
-          <RefreshCw className="w-4 h-4" />
         </button>
         <button
           onClick={enterSearchMode}

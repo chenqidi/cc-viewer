@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { homeDir } from '@tauri-apps/api/path';
 import { ChevronDown, ChevronRight, Eye } from 'lucide-react';
@@ -76,6 +76,27 @@ export function FileList() {
 
     initFiles();
   }, [loadFiles]);
+
+  // 追踪最新的加载状态，避免并发刷新
+  const isFileListLoadingRef = useRef(isFileListLoading);
+  useEffect(() => {
+    isFileListLoadingRef.current = isFileListLoading;
+  }, [isFileListLoading]);
+
+  // 自动轮询刷新文件列表
+  useEffect(() => {
+    if (!currentDirectory) return;
+
+    const timer = window.setInterval(() => {
+      if (document.hidden) return; // 不在前台时跳过
+      if (isFileListLoadingRef.current) return;
+      void loadFiles(currentDirectory);
+    }, 10_000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [currentDirectory, loadFiles]);
 
   // 将 ProjectInfo 转换为 ProjectGroup 的数据格式
   // 注意：useMemo 必须在所有条件返回之前调用，遵循 Hooks 规则
