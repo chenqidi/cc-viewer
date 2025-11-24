@@ -92,7 +92,7 @@ function ToolResultPreview({ text }: ToolResultPreviewProps) {
       </div>
       {hasMultipleLines && (
         <CollapseToggle
-          label={expanded ? '收起' : `展开全部（${lines.length} 行）`}
+          label={expanded ? '收起' : '展开全部'}
           onClick={handleToggle}
         />
       )}

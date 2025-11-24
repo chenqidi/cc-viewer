@@ -40,7 +40,7 @@ function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
       {hasMultipleLines && (
         <CollapseToggle
           className="mt-1"
-          label={expanded ? '收起' : `展开全部（${lines.length} 行）`}
+          label={expanded ? '收起' : '展开全部'}
           onClick={handleToggle}
         />
       )}

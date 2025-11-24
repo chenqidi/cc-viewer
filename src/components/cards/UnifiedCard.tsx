@@ -426,9 +426,7 @@ export function UnifiedCard({
   const thinkingToggleLabel = showThinkingToggleHint
     ? isExpanded
       ? '收起'
-      : thinkingLineCount && thinkingLineCount > 1
-        ? `展开全部（${thinkingLineCount} 行）`
-        : '展开全部'
+      : '展开全部'
     : '';
 
   const renderLabel = (rawLabel: string): ReactNode => {
