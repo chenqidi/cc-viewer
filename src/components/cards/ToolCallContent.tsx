@@ -140,11 +140,11 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
           </div>
           {searchQuery ? (
             <pre
-              className="code-glass p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto leading-relaxed"
+              className="code-glass p-4 text-xs max-h-64 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words"
               dangerouslySetInnerHTML={{ __html: displayResult || '' }}
             />
           ) : (
-            <pre className="code-glass p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto leading-relaxed">
+            <pre className="code-glass p-4 text-xs max-h-64 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words">
               {tool.result}
             </pre>
           )}
