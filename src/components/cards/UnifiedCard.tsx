@@ -1,4 +1,4 @@
-import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { cn, highlightText, formatTimestamp } from '../../lib/utils';
@@ -40,6 +40,18 @@ const typeConfig: Record<
   system: {
     Icon: Cpu,
     iconColorClass: 'text-accent-purple',
+  },
+};
+
+const labelSuffixStyleMap: Record<string, CSSProperties> = {
+  thinking: {
+    color: 'color-mix(in srgb, var(--color-accent-yellow) 78%, #0f0f0f 22%)',
+  },
+  tool_use: {
+    color: 'color-mix(in srgb, var(--color-accent-orange) 78%, #0f0f0f 22%)',
+  },
+  tool_result: {
+    color: 'color-mix(in srgb, var(--color-accent-blue) 78%, #0f0f0f 22%)',
   },
 };
 
@@ -430,6 +442,29 @@ export function UnifiedCard({
     toggleCard(cardId);
   };
 
+  const renderLabel = (rawLabel: string): ReactNode => {
+    const dotIndex = rawLabel.indexOf('.');
+    if (dotIndex === -1) {
+      return rawLabel;
+    }
+
+    const base = rawLabel.slice(0, dotIndex);
+    const suffix = rawLabel.slice(dotIndex + 1);
+    const suffixStyle = labelSuffixStyleMap[suffix];
+
+    return (
+      <>
+        <span className="text-text-primary">{base}</span>
+        <span
+          className="text-text-primary"
+          style={suffixStyle}
+        >
+          .{suffix}
+        </span>
+      </>
+    );
+  };
+
   return (
     <Card className={`card-${type}`}>
       <CardHeader
@@ -443,7 +478,7 @@ export function UnifiedCard({
               <Icon className={cn('w-3.5 h-3.5', iconColorClass)} />
             </span>
             <span className="font-semibold text-xs uppercase tracking-wide text-text-primary">
-              {label || type}
+              {renderLabel(label || type)}
             </span>
           </div>
         </div>
