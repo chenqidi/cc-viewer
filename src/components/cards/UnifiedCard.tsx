@@ -1,4 +1,4 @@
-import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Card, CardHeader, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { cn, highlightText, formatTimestamp } from '../../lib/utils';
@@ -431,17 +431,6 @@ export function UnifiedCard({
         : '展开全部'
     : '';
 
-  const handleThinkingContentClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (!showThinkingToggleHint) {
-      return;
-    }
-    const target = event.target as HTMLElement | null;
-    if (target && target.closest('a,button,textarea,input')) {
-      return;
-    }
-    toggleCard(cardId);
-  };
-
   const renderLabel = (rawLabel: string): ReactNode => {
     const dotIndex = rawLabel.indexOf('.');
     if (dotIndex === -1) {
@@ -515,17 +504,13 @@ export function UnifiedCard({
 
       {/* Thinking 卡片：折叠状态下也展示内容，但只显示首行；展开后展示完整内容 */}
       {isThinkingCard ? (
-        <CardContent className="card-content space-y-1">
-          <div
-            className={cn(
-              'bg-surface-muted rounded-glass px-3 py-3 border border-white/5 text-sm text-text-primary break-words transition-colors',
-              renderAsMarkdown ? 'whitespace-normal' : 'whitespace-pre-wrap',
-              showThinkingToggleHint ? 'cursor-pointer hover:bg-white/5' : 'cursor-text'
-            )}
-            onClick={handleThinkingContentClick}
-          >
-            {renderContent(!isExpanded)}
-          </div>
+        <CardContent
+          className={cn(
+            'card-content space-y-1 break-words',
+            renderAsMarkdown ? 'whitespace-normal' : 'whitespace-pre-wrap'
+          )}
+        >
+          {renderContent(!isExpanded)}
           {showThinkingToggleHint && (
             <CollapseToggle
               label={thinkingToggleLabel}
@@ -533,7 +518,7 @@ export function UnifiedCard({
             />
           )}
           {appendContent && (
-            <div className="pt-1">
+            <div className="pt-1" data-append-content>
               {appendContent}
             </div>
           )}
