@@ -40,6 +40,7 @@ export interface ParsedMessage {
 
   // 元数据
   tokenUsage?: TokenUsage;
+  version?: string;
   gitBranch?: string;
   cwd?: string;
 

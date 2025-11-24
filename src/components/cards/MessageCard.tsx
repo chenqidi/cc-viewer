@@ -202,8 +202,33 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
     }
   }
 
+  const formatMetaValue = (value: unknown): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed || '-';
+    }
+    try {
+      const text = String(value).trim();
+      return text || '-';
+    } catch {
+      return '-';
+    }
+  };
+
   // 1) assistant.tool_use 纯工具调用消息：用专门的 ToolCallContent 渲染
-  if (
+  if (message.type === 'system') {
+    const systemText = [
+      `cwd: ${formatMetaValue(message.cwd ?? (raw as any).cwd)}`,
+      `version: ${formatMetaValue(message.version ?? (raw as any).version)}`,
+      `gitBranch: ${formatMetaValue(message.gitBranch ?? (raw as any).gitBranch)}`,
+    ].join('\n');
+
+    content = systemText;
+    renderAsMarkdown = false;
+    copyText = systemText;
+
+  } else if (
     message.type === 'assistant' &&
     isToolUseOnly &&
     message.toolCalls &&

@@ -79,10 +79,40 @@ export function transformToMessage(record: JsonlRecord, index: number): ParsedMe
     timestamp: timestampStr ? new Date(timestampStr) : new Date(0),
     parentId: anyRecord.parentUuid,
     isSidechain: Boolean(anyRecord.isSidechain),
+    version: anyRecord.version,
     gitBranch: anyRecord.gitBranch,
     cwd: anyRecord.cwd,
     raw: record,
   };
+
+  const formatMetaValue = (value: unknown): string => {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed || '-';
+    }
+    try {
+      const text = String(value).trim();
+      return text || '-';
+    } catch {
+      return '-';
+    }
+  };
+
+  if (record.type === 'system') {
+    const systemInfoLines = [
+      `cwd: ${formatMetaValue(anyRecord.cwd)}`,
+      `version: ${formatMetaValue(anyRecord.version)}`,
+      `gitBranch: ${formatMetaValue(anyRecord.gitBranch)}`,
+    ];
+    const systemText = systemInfoLines.join('\n');
+
+    return {
+      ...baseMessage,
+      role: 'system',
+      textContent: systemText,
+    } as ParsedMessage;
+  }
 
   // summary 记录没有 message 字段，直接展示 summary 文本
   if (record.type === 'summary') {
