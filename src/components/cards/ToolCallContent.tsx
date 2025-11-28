@@ -3,6 +3,7 @@ import { Button } from '../ui/button';
 import { highlightText } from '../../lib/utils';
 import type { ToolCall } from '../../types/app';
 import { CollapseToggle } from './CollapseToggle';
+import { EditDiffViewer } from './EditDiffViewer';
 
 interface ToolCallContentProps {
   toolCalls: ToolCall[];
@@ -95,6 +96,17 @@ function dedent(text: string): string {
     .join('\n');
 }
 
+/**
+ * 检查是否为 Edit 工具（包含 old_string 和 new_string）
+ */
+function isEditTool(name: string, input: Record<string, unknown>): boolean {
+  return (
+    name === 'Edit' &&
+    typeof input.old_string === 'string' &&
+    typeof input.new_string === 'string'
+  );
+}
+
 function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
   const [expanded, setExpanded] = useState(false);
   // 先去除公共缩进
@@ -181,49 +193,84 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true, sho
           规则：如果某个参数的文本有 2 行或以上，则默认折叠，只展示首行，点击后再展开/收起。 */}
       {Object.keys(tool.input).length > 0 && (
         <div className="space-y-1">
-          {Object.entries(tool.input).map(([key, value]) => {
-            // 特殊处理 todos 参数，使用专门的渲染组件
-            if (key === 'todos' && isTodosArray(value)) {
+          {/* Edit 工具特殊处理：使用 diff 视图展示 */}
+          {isEditTool(tool.name, tool.input) ? (
+            <>
+              {/* file_path 参数单独展示 */}
+              {tool.input.file_path && (
+                <div className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2">
+                  <span className="font-semibold text-text-secondary break-keep">
+                    file_path:
+                  </span>
+                  <span className="break-all">{String(tool.input.file_path)}</span>
+                </div>
+              )}
+              {/* Diff 视图 */}
+              <EditDiffViewer
+                oldString={String(tool.input.old_string)}
+                newString={String(tool.input.new_string)}
+              />
+              {/* 其他参数（如 replace_all） */}
+              {Object.entries(tool.input)
+                .filter(([key]) => !['file_path', 'old_string', 'new_string'].includes(key))
+                .map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2"
+                  >
+                    <span className="font-semibold text-text-secondary break-keep">
+                      {key}:
+                    </span>
+                    <span>{String(value)}</span>
+                  </div>
+                ))}
+            </>
+          ) : (
+            /* 其他工具的通用参数渲染 */
+            Object.entries(tool.input).map(([key, value]) => {
+              // 特殊处理 todos 参数，使用专门的渲染组件
+              if (key === 'todos' && isTodosArray(value)) {
+                return (
+                  <div
+                    key={key}
+                    className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex flex-col gap-1"
+                  >
+                    <span className="font-semibold text-text-secondary">
+                      {key}:
+                    </span>
+                    <TodoListRenderer todos={value} />
+                  </div>
+                );
+              }
+
+              let displayValue: string;
+
+              if (value === null || value === undefined) {
+                displayValue = 'null';
+              } else if (typeof value === 'string') {
+                displayValue = value;
+              } else {
+                try {
+                  // 格式化 JSON，使用 2 空格缩进，便于阅读数组和对象
+                  displayValue = JSON.stringify(value, null, 2);
+                } catch {
+                  displayValue = String(value);
+                }
+              }
+
               return (
                 <div
                   key={key}
-                  className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex flex-col gap-1"
+                  className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2"
                 >
-                  <span className="font-semibold text-text-secondary">
+                  <span className="font-semibold text-text-secondary break-keep">
                     {key}:
                   </span>
-                  <TodoListRenderer todos={value} />
+                  <CollapsibleParamValue value={displayValue} />
                 </div>
               );
-            }
-
-            let displayValue: string;
-
-            if (value === null || value === undefined) {
-              displayValue = 'null';
-            } else if (typeof value === 'string') {
-              displayValue = value;
-            } else {
-              try {
-                // 格式化 JSON，使用 2 空格缩进，便于阅读数组和对象
-                displayValue = JSON.stringify(value, null, 2);
-              } catch {
-                displayValue = String(value);
-              }
-            }
-
-            return (
-              <div
-                key={key}
-                className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex gap-2"
-              >
-                <span className="font-semibold text-text-secondary break-keep">
-                  {key}:
-                </span>
-                <CollapsibleParamValue value={displayValue} />
-              </div>
-            );
-          })}
+            })
+          )}
         </div>
       )}
 
