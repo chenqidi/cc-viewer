@@ -19,8 +19,8 @@ import { Copy } from "lucide-react";
 function App() {
   const {
     selectedFileId,
+    selectedFilePath,
     currentMessages,
-    files,
     refreshFile,
     isMessageLoading,
   } = useFileStore();
@@ -43,12 +43,16 @@ function App() {
   const lastSearchQueryRef = useRef(searchQuery);
   const lastFileIdRef = useRef<string | null>(selectedFileId ?? null);
 
-  // 获取当前选中的文件信息
-  const selectedFile = files.find(f => f.id === selectedFileId);
+  // 从缓存的文件路径提取文件名，避免依赖 files 数组
+  const selectedFileName = useMemo(() => {
+    if (!selectedFilePath) return null;
+    const parts = selectedFilePath.replace(/\\/g, '/').split('/');
+    return parts[parts.length - 1] || null;
+  }, [selectedFilePath]);
 
   const sessionId = useMemo(() => {
     const isAgentFile =
-      selectedFile?.fileName?.toLowerCase().startsWith('agent-') ?? false;
+      selectedFileName?.toLowerCase().startsWith('agent-') ?? false;
     if (!isAgentFile) return null;
     for (const msg of currentMessages) {
       const id = (msg.raw as any)?.sessionId;
@@ -57,17 +61,17 @@ function App() {
       }
     }
     return null;
-  }, [currentMessages, selectedFile]);
+  }, [currentMessages, selectedFileName]);
 
   const displayFileName = useMemo(() => {
-    if (!selectedFile?.fileName) return '';
-    const trimmed = selectedFile.fileName.replace(/\.jsonl$/i, '');
+    if (!selectedFileName) return '';
+    const trimmed = selectedFileName.replace(/\.jsonl$/i, '');
     const parts = trimmed.split('-');
     if (parts.length >= 2) {
       return `${parts[0]}-${parts[1]}`;
     }
     return trimmed;
-  }, [selectedFile]);
+  }, [selectedFileName]);
 
   // 计算当前消息的统计数据
   const stats = useMemo(() => {
@@ -374,11 +378,11 @@ function App() {
   }, []);
 
   // 文件信息栏
-  const fileInfo = selectedFile ? (
+  const fileInfo = selectedFileName ? (
     <div className="flex justify-between items-center w-full gap-4">
       <div className="min-w-0 flex-1">
         <h2 className="text-lg font-bold text-text-primary truncate">
-          {displayFileName || selectedFile.fileName} ({currentMessages.length})
+          {displayFileName || selectedFileName} ({currentMessages.length})
         </h2>
       </div>
       <div className="flex-shrink-0">
