@@ -59,7 +59,7 @@ export function MainLayout({ sidebar, content }: MainLayoutProps) {
 
         {/* 拖动手柄 - hover 时才显示指示线 */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-2 bg-transparent hover:bg-accent/30 transition-colors group z-10 select-none cursor-col-resize"
+          className="absolute right-0 top-0 bottom-0 w-2 bg-transparent hover:bg-accent/30 transition-colors group z-10 select-none cursor-e-resize"
           onMouseDown={handleMouseDown}
         >
           <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 bg-accent-bright opacity-0 group-hover:opacity-100 transition-opacity" />
