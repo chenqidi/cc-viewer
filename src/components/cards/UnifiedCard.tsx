@@ -12,6 +12,31 @@ import type { TokenUsage } from '../../types/app';
 import { CollapseToggle } from './CollapseToggle';
 import { isValidMarkdown, repairMarkdown } from '../../lib/markdown';
 
+/**
+ * 去除多行文本的公共前导空白（dedent）
+ */
+function dedent(text: string): string {
+  const lines = text.split(/\r?\n/);
+
+  // 找出所有非空行的最小缩进
+  let minIndent = Infinity;
+  for (const line of lines) {
+    if (line.trim().length === 0) continue;
+    const match = line.match(/^(\s*)/);
+    if (match) {
+      minIndent = Math.min(minIndent, match[1].length);
+    }
+  }
+
+  if (minIndent === Infinity || minIndent === 0) {
+    return text;
+  }
+
+  return lines
+    .map(line => line.slice(minIndent))
+    .join('\n');
+}
+
 type CardType = 'user' | 'assistant' | 'system' | 'thinking' | 'tool';
 
 const typeConfig: Record<
@@ -298,19 +323,24 @@ export function UnifiedCard({
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
+                // 自定义 pre：直接返回 children，避免 CodeBlock 外层多包一层 <pre>
+                pre({ children }) {
+                  return <>{children}</>;
+                },
                 code(codeProps) {
                   const { inline, className, children } = codeProps as {
                     inline?: boolean;
                     className?: string;
                     children: ReactNode;
                   };
-                  // 使用 inline 判断块级/行内：
-                  // - 三反引号 / 缩进代码块：inline === false
-                  // - 单反引号行内代码：inline === true
                   const match = /language-([\w-]+)/.exec(className || '');
                   const language = match ? match[1] : '';
-                  const isCodeBlock = inline === false;
-                  const code = String(children).replace(/\n$/, '');
+                  const rawCode = String(children).replace(/\n$/, '');
+                  // 判断是否为代码块：
+                  // 1. inline === false（三反引号 / 缩进代码块）
+                  // 2. 或者内容包含换行符（兼容某些版本的 react-markdown）
+                  const isCodeBlock = inline === false || rawCode.includes('\n');
+                  const code = isCodeBlock ? dedent(rawCode) : rawCode;
 
                   // 块级代码：统一走 CodeBlock（即使没有显式语言）
                   if (isCodeBlock) {
@@ -348,10 +378,10 @@ export function UnifiedCard({
                 );
               },
               ul({ children }) {
-                return <ul className="list-disc list-inside space-y-2 my-3">{children}</ul>;
+                return <ul className="list-disc pl-5 space-y-2 my-3">{children}</ul>;
               },
               ol({ children }) {
-                return <ol className="list-decimal list-inside space-y-2 my-3">{children}</ol>;
+                return <ol className="list-decimal pl-5 space-y-2 my-3">{children}</ol>;
               },
               p({ children }) {
                 return <p className="my-2 leading-relaxed">{highlightMarkdownChildren(children)}</p>;

@@ -8,6 +8,7 @@ interface ToolCallContentProps {
   toolCalls: ToolCall[];
   searchQuery?: string;
   isExpanded?: boolean;
+  showToolCallLabel?: boolean; // 是否显示"工具调用"分隔标签
 }
 
 interface CollapsibleParamValueProps {
@@ -67,11 +68,40 @@ function TodoListRenderer({ todos }: { todos: TodoItem[] }) {
   );
 }
 
+/**
+ * 去除多行文本的公共前导空白（dedent）
+ */
+function dedent(text: string): string {
+  const lines = text.split(/\r?\n/);
+
+  // 找出所有非空行的最小缩进
+  let minIndent = Infinity;
+  for (const line of lines) {
+    if (line.trim().length === 0) continue; // 跳过空行
+    const match = line.match(/^(\s*)/);
+    if (match) {
+      minIndent = Math.min(minIndent, match[1].length);
+    }
+  }
+
+  // 如果没有找到有效缩进，直接返回原文本
+  if (minIndent === Infinity || minIndent === 0) {
+    return text;
+  }
+
+  // 去除每行的公共缩进
+  return lines
+    .map(line => line.slice(minIndent))
+    .join('\n');
+}
+
 function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
   const [expanded, setExpanded] = useState(false);
-  const lines = value.split(/\r?\n/);
+  // 先去除公共缩进
+  const dedentedValue = dedent(value);
+  const lines = dedentedValue.split(/\r?\n/);
   const hasMultipleLines = lines.length > 1;
-  const displayText = expanded || !hasMultipleLines ? value : lines[0];
+  const displayText = expanded || !hasMultipleLines ? dedentedValue : lines[0];
 
   const handleToggle = () => {
     if (hasMultipleLines) {
@@ -101,7 +131,7 @@ function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
   );
 }
 
-export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: ToolCallContentProps) {
+export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true, showToolCallLabel = false }: ToolCallContentProps) {
   const handleCopyResult = (result: string) => {
     navigator.clipboard.writeText(result);
   };
@@ -125,12 +155,21 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
   }
 
   // 高亮显示工具结果（如果有的话；当前 assistant.tool_use 卡片一般只关心参数）
-  const displayResult = searchQuery && tool.result
-    ? highlightText(tool.result, searchQuery)
-    : tool.result;
+  const dedentedResult = tool.result ? dedent(tool.result) : '';
+  const displayResult = searchQuery && dedentedResult
+    ? highlightText(dedentedResult, searchQuery)
+    : dedentedResult;
 
   return (
     <>
+      {/* 工具调用分隔标签（混合内容时显示） */}
+      {showToolCallLabel && (
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs text-text-secondary font-medium">工具调用</span>
+          <div className="flex-1 h-px bg-border-subtle" />
+        </div>
+      )}
+
       {/* 工具名称（纯文本形式，如 "tool: Read"） */}
       <div className="mb-2">
         <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-surface-badge rounded-glass brutal-border">
@@ -189,7 +228,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
       )}
 
       {/* 工具结果（如果存在的话，依然保留在参数块之后） */}
-      {tool.result && (
+      {dedentedResult && (
         <div className="mt-3">
           <div className="flex items-center justify-between mb-2">
             <span className="inline-flex items-center px-3 py-1 text-xs font-semibold text-text-primary bg-surface-badge rounded-glass brutal-border">
@@ -200,7 +239,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                handleCopyResult(tool.result!);
+                handleCopyResult(dedentedResult);
               }}
               className="h-7 px-3 text-xs hover:bg-white/5 rounded-glass transition-colors"
             >
@@ -214,7 +253,7 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
             />
           ) : (
             <pre className="code-glass p-4 text-xs max-h-64 overflow-y-auto leading-relaxed whitespace-pre-wrap break-words">
-              {tool.result}
+              {dedentedResult}
             </pre>
           )}
         </div>

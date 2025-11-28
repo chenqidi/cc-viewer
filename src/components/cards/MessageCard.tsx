@@ -15,6 +15,31 @@ interface ToolResultPreviewProps {
   text: string;
 }
 
+/**
+ * 去除多行文本的公共前导空白（dedent）
+ */
+function dedent(text: string): string {
+  const lines = text.split(/\r?\n/);
+
+  // 找出所有非空行的最小缩进
+  let minIndent = Infinity;
+  for (const line of lines) {
+    if (line.trim().length === 0) continue;
+    const match = line.match(/^(\s*)/);
+    if (match) {
+      minIndent = Math.min(minIndent, match[1].length);
+    }
+  }
+
+  if (minIndent === Infinity || minIndent === 0) {
+    return text;
+  }
+
+  return lines
+    .map(line => line.slice(minIndent))
+    .join('\n');
+}
+
 function extractAgentId(source: unknown): string | null {
   if (!source || typeof source !== 'object') return null;
 
@@ -57,9 +82,10 @@ function extractAgentId(source: unknown): string | null {
 
 function ToolResultPreview({ text }: ToolResultPreviewProps) {
   const [expanded, setExpanded] = useState(false);
-  const lines = text.split(/\r?\n/);
+  const dedentedText = dedent(text);
+  const lines = dedentedText.split(/\r?\n/);
   const hasMultipleLines = lines.length > 1;
-  const displayText = expanded || !hasMultipleLines ? text : lines[0];
+  const displayText = expanded || !hasMultipleLines ? dedentedText : lines[0];
 
   const handleToggle = () => {
     if (hasMultipleLines) {
@@ -135,6 +161,7 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
   let labelBase = baseTypeLabel;
   let isThinkingOnly = false;
   let isToolUseOnly = false;
+  let hasMixedContent = false; // 同时包含 text 和 tool_use
   const hasMessage = Object.prototype.hasOwnProperty.call(raw, 'message');
   let isUserToolResultMessage = false;
 
@@ -148,6 +175,8 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
       const allThinking = types.every((t) => t === 'thinking');
       const allToolUse = types.every((t) => t === 'tool_use');
       const allToolResult = types.every((t) => t === 'tool_result');
+      const hasText = types.some((t) => t === 'text');
+      const hasToolUse = types.some((t) => t === 'tool_use');
 
       if (allThinking) {
         isThinkingOnly = true;
@@ -158,6 +187,9 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
       } else if (allToolResult && baseTypeLabel === 'user') {
         isUserToolResultMessage = true;
         labelBase = `${baseTypeLabel}.tool_result`;
+      } else if (hasText && hasToolUse) {
+        // 混合内容：同时有文本和工具调用
+        hasMixedContent = true;
       }
     }
   }
@@ -244,7 +276,32 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
     renderAsMarkdown = false;
     copyText = JSON.stringify(message.toolCalls, null, 2);
 
-  // 2) user.tool_result 消息：展示工具结果
+  // 2) assistant 混合内容：文本 + 工具调用
+  } else if (
+    message.type === 'assistant' &&
+    hasMixedContent &&
+    message.toolCalls &&
+    message.toolCalls.length > 0
+  ) {
+    // 从 markdownSegments 中过滤掉工具调用的内容
+    // 工具调用的 segment 格式为 "toolName\n\n- key: value..."
+    const toolNames = new Set(message.toolCalls.map(tc => tc.name));
+    const filteredSegments = (message.markdownSegments || []).filter(segment => {
+      // 检查 segment 是否以工具名开头（工具调用的格式）
+      const firstLine = segment.split('\n')[0].trim();
+      return !toolNames.has(firstLine);
+    });
+
+    if (filteredSegments.length > 0) {
+      content = filteredSegments;
+    } else {
+      content = message.textContent || '';
+    }
+    renderAsMarkdown = true;
+    copyText = (typeof content === 'string' ? content : (content as string[]).join('\n\n'))
+      + '\n\n' + JSON.stringify(message.toolCalls, null, 2);
+
+  // 3) user.tool_result 消息：展示工具结果
   } else if (isUserToolResultMessage && toolResultText) {
     content = <ToolResultPreview text={toolResultText} />;
     renderAsMarkdown = false;
@@ -270,9 +327,21 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
   const indexText = message.indexLabel || `${baseIndex + 1}`;
   const label = labelBase;
 
-  // assistant.thinking 卡片默认折叠（但后续会在 UnifiedCard 里改成“折叠时展示首行”）
+  // assistant.thinking 卡片默认折叠（但后续会在 UnifiedCard 里改成"折叠时展示首行"）
   const defaultExpanded =
     message.type === 'assistant' && isThinkingOnly ? false : true;
+
+  // 混合内容时，工具调用作为 appendContent 显示
+  const mixedToolCallContent = hasMixedContent && message.toolCalls && message.toolCalls.length > 0
+    ? (
+      <ToolCallContent
+        toolCalls={message.toolCalls}
+        searchQuery={searchQuery}
+        isExpanded={true}
+        showToolCallLabel={true}
+      />
+    )
+    : null;
 
   const agentBadge =
     !isCurrentFileAgent && agentFileLabels.length > 0
@@ -290,6 +359,16 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
       )
       : null;
 
+  // 组合 appendContent：工具调用 + agentBadge
+  const appendContent = (mixedToolCallContent || agentBadge)
+    ? (
+      <>
+        {mixedToolCallContent}
+        {agentBadge}
+      </>
+    )
+    : undefined;
+
   return (
     <div className="space-y-3" data-message-id={message.id}>
       <UnifiedCard
@@ -304,7 +383,7 @@ export function MessageCard({ message, messageIndex, searchQuery }: MessageCardP
         searchQuery={searchQuery}
         defaultExpanded={defaultExpanded}
         renderAsMarkdown={renderAsMarkdown}
-        appendContent={agentBadge || undefined}
+        appendContent={appendContent}
       />
     </div>
   );
