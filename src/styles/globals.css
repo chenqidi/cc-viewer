@@ -160,10 +160,32 @@
     @apply border border-border rounded-glass;
   }
 
-  /* 让块级代码块只由 pre 控制背景，内部 code 完全透明且无边框，避免“每行一块边框” */
+  /* 让块级代码块只由 pre 控制背景，内部 code 完全透明且无边框，避免"每行一块边框" */
   .card-content .prose-sm pre code {
     background-color: transparent;
     border-width: 0;
     border: none;
+  }
+
+  /* Markdown 表格样式 */
+  .card-content table {
+    @apply w-full border-collapse my-4;
+  }
+
+  .card-content table th,
+  .card-content table td {
+    @apply border border-border px-3 py-2 text-left;
+  }
+
+  .card-content table th {
+    @apply bg-surface-muted font-semibold text-text-primary;
+  }
+
+  .card-content table td {
+    @apply text-text-primary;
+  }
+
+  .card-content table tr:hover td {
+    @apply bg-white/5;
   }
 }
