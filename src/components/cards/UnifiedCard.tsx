@@ -348,7 +348,6 @@ export function UnifiedCard({
                       <CodeBlock
                         code={code}
                         language={language || undefined}
-                        showHeader={Boolean(language)}
                       />
                     );
                   }

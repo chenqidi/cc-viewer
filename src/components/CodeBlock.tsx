@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism-tomorrow.css'; // 使用 Tomorrow Night 主题（接近 Spacegray）
-import { Button } from './ui/button';
 
 // 导入常用语言支持
 import 'prismjs/components/prism-javascript';
@@ -22,8 +21,6 @@ interface CodeBlockProps {
   language?: string;
   showLineNumbers?: boolean;
   className?: string;
-  // 是否显示顶部语言标签和“复制代码”按钮
-  showHeader?: boolean;
 }
 
 export function CodeBlock({
@@ -31,7 +28,6 @@ export function CodeBlock({
   language = 'text',
   showLineNumbers = true,
   className = '',
-  showHeader = true,
 }: CodeBlockProps) {
   const codeRef = useRef<HTMLElement>(null);
 
@@ -41,33 +37,14 @@ export function CodeBlock({
     }
   }, [code, language]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-  };
-
   // 检测语言
   const detectedLanguage = language || 'text';
   const validLanguage = Prism.languages[detectedLanguage] ? detectedLanguage : 'text';
+  // 只有当有有效语言且不是 'text' 时才显示标签
+  const showLanguageLabel = validLanguage && validLanguage !== 'text';
 
   return (
-    <div className={`relative group ${className}`}>
-      {/* 语言标签和复制按钮 */}
-      {showHeader && (
-        <div className="flex items-center justify-between bg-surface-codeHeader px-4 py-2 border-b-2 border-border">
-          <span className="text-xs text-text-secondary uppercase font-mono">
-            {validLanguage}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopy}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            复制代码
-          </Button>
-        </div>
-      )}
-
+    <div className={`relative ${className}`}>
       {/* 代码块 */}
       <div className="overflow-x-auto">
         <pre
@@ -81,6 +58,15 @@ export function CodeBlock({
           </code>
         </pre>
       </div>
+
+      {/* 语言标签 - 在代码块外部右下角 */}
+      {showLanguageLabel && (
+        <div className="flex justify-end mt-1">
+          <div className="text-xs text-text-muted font-mono px-2 py-0.5 border border-border rounded-sm" style={{ backgroundColor: '#2d2d2d' }}>
+            {validLanguage}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
