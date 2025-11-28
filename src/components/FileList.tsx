@@ -27,7 +27,7 @@ export function FileList() {
     selectFile,
   } = useFileStore();
   const { fileSearchQuery } = useUiStore();
-  const [isRootExpanded, setIsRootExpanded] = useState(false);
+  const [isRootExpanded, setIsRootExpanded] = useState(true);
   const [resolvedHomeDir, setResolvedHomeDir] = useState<string | null>(null);
   const [isAgentFilterEnabled, setIsAgentFilterEnabled] = useState<boolean>(() => {
     if (typeof window === 'undefined') {

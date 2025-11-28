@@ -62,7 +62,7 @@ export function ProjectGroup({
   fileIndentOffset = 22,
   hideHeader = false,
 }: ProjectGroupProps) {
-  const [isExpanded, setIsExpanded] = useState(hideHeader);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (hideHeader) {
