@@ -14,6 +14,59 @@ interface CollapsibleParamValueProps {
   value: string;
 }
 
+interface TodoItem {
+  content?: string;
+  status?: 'pending' | 'in_progress' | 'completed';
+  activeForm?: string;
+}
+
+/**
+ * 检查值是否为 todos 数组格式
+ */
+function isTodosArray(value: unknown): value is TodoItem[] {
+  if (!Array.isArray(value)) return false;
+  if (value.length === 0) return false;
+  return value.every(
+    (item) =>
+      typeof item === 'object' &&
+      item !== null &&
+      ('content' in item || 'activeForm' in item)
+  );
+}
+
+/**
+ * 获取 todo 状态前缀
+ */
+function getTodoPrefix(status?: string): string {
+  switch (status) {
+    case 'completed':
+      return '✓ ';
+    case 'in_progress':
+      return '🔄 ';
+    default:
+      return '';
+  }
+}
+
+/**
+ * 渲染 Todos 列表组件
+ */
+function TodoListRenderer({ todos }: { todos: TodoItem[] }) {
+  return (
+    <ul className="flex-1 pl-4 space-y-1 list-disc list-inside">
+      {todos.map((todo, index) => {
+        const content = todo.content || todo.activeForm || '(无内容)';
+        const prefix = getTodoPrefix(todo.status);
+        return (
+          <li key={index}>
+            {prefix}{content}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function CollapsibleParamValue({ value }: CollapsibleParamValueProps) {
   const [expanded, setExpanded] = useState(false);
   const lines = value.split(/\r?\n/);
@@ -90,6 +143,21 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
       {Object.keys(tool.input).length > 0 && (
         <div className="space-y-1">
           {Object.entries(tool.input).map(([key, value]) => {
+            // 特殊处理 todos 参数，使用专门的渲染组件
+            if (key === 'todos' && isTodosArray(value)) {
+              return (
+                <div
+                  key={key}
+                  className="bg-surface-muted rounded-glass px-3 py-2 text-xs font-mono text-text-primary flex flex-col gap-1"
+                >
+                  <span className="font-semibold text-text-secondary">
+                    {key}:
+                  </span>
+                  <TodoListRenderer todos={value} />
+                </div>
+              );
+            }
+
             let displayValue: string;
 
             if (value === null || value === undefined) {
@@ -98,7 +166,8 @@ export function ToolCallContent({ toolCalls, searchQuery, isExpanded = true }: T
               displayValue = value;
             } else {
               try {
-                displayValue = JSON.stringify(value);
+                // 格式化 JSON，使用 2 空格缩进，便于阅读数组和对象
+                displayValue = JSON.stringify(value, null, 2);
               } catch {
                 displayValue = String(value);
               }
