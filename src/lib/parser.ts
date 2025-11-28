@@ -68,12 +68,15 @@ export function transformToMessage(record: JsonlRecord, index: number): ParsedMe
     anyRecord.timestamp ||
     anyRecord.snapshot?.timestamp;
 
+  // 生成唯一 ID：优先使用 uuid/messageId/leafUuid，但始终追加 index 确保唯一性
+  const baseId =
+    anyRecord.uuid ||
+    anyRecord.messageId ||
+    anyRecord.leafUuid ||
+    `${anyRecord.type || 'unknown'}`;
+
   const baseMessage: Omit<ParsedMessage, 'role'> = {
-    id:
-      anyRecord.uuid ||
-      anyRecord.messageId ||
-      anyRecord.leafUuid ||
-      `${anyRecord.type || 'unknown'}-${index}`,
+    id: `${baseId}-${index}`,
     type: anyRecord.type,
     sessionIndex: index,
     timestamp: timestampStr ? new Date(timestampStr) : new Date(0),
