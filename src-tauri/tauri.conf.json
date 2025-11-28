@@ -23,7 +23,7 @@
       {
         "title": "Claude Code History Viewer",
         "width": 1400,
-        "height": 900,
+        "height": 768,
         "minWidth": 1024,
         "minHeight": 768,
         "resizable": true,
